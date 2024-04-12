@@ -10,7 +10,7 @@ fn main() {
             (
                 input_system::gamepad::gamepad_connections,
                 input_system::gamepad::gamepad_input,
-                //input_system::keyboard::keyboard_input,
+                input_system::keyboard::keyboard_input,
             ),
         )
         .run();
