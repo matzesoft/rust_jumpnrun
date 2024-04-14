@@ -1,4 +1,4 @@
-use bevy::{prelude::*, window::WindowMode};
+use bevy::prelude::*;
 use bevy_ecs_ldtk::{app::LdtkIntCellAppExt, LdtkPlugin, LevelSelection};
 
 mod asset_system;
