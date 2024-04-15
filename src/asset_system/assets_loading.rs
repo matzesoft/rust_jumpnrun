@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 
 pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let camera = Camera2dBundle::default();
+    let mut camera = Camera2dBundle::default();
     commands.spawn(camera);
 
     commands.spawn(LdtkWorldBundle {
