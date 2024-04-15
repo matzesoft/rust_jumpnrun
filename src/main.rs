@@ -6,15 +6,6 @@ mod asset_system;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins
-                     .set(WindowPlugin{
-                            primary_window: Some(Window {
-                                title: "jump_n_run".into(),
-                                fit_canvas_to_parent: true,
-                                ..Default::default()
-                            }),
-                            ..Default::default()
-                                            
-                        })
                      .set(ImagePlugin::default_nearest())
                      )
         .add_plugins(LdtkPlugin)
