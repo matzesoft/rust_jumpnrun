@@ -7,6 +7,13 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins
                      .set(ImagePlugin::default_nearest())
+                     .set(WindowPlugin {
+                         primary_window: Some(Window {
+                             fit_canvas_to_parent: true,
+                             ..Default::default()
+                         }),
+                         ..Default::default()
+                     })
                      )
         .add_plugins(LdtkPlugin)
         .add_systems(Startup, asset_system::assets_loading::setup)
