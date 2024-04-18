@@ -1,14 +1,20 @@
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
+use bevy_rapier2d::prelude::*;
 
-#[derive(Default, Component)]
-struct Player;
+use crate::input_system;
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Default, Component)]
+pub struct Player;
 
-#[derive(Default, Bundle, LdtkEntity)]
+#[derive(Clone, Default, Bundle, LdtkEntity)]
 pub struct PlayerBundle {
-    player: Player,
+    pub player: Player,
+    pub velocity: Velocity,
+    pub rigid_body: RigidBody,
     #[sprite_sheet_bundle]
-    sprite_sheet_bundle: SpriteSheetBundle,
+    pub sprite_sheet_bundle: SpriteSheetBundle,
     #[grid_coords]
     grid_coords: GridCoords,
+
+    pub input_handler: input_system::input_handler::InputHandler,
 }
