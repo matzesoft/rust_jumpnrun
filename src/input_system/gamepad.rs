@@ -3,8 +3,12 @@ use super::player;
 use super::sprite;*/
 
 use super::input_handler;
+use crate::asset_system::players::Player;
+use crate::input_system::input_handler::InputHandler;
 use bevy::input::gamepad::*;
 use bevy::prelude::*;
+use bevy_rapier2d::dynamics::Velocity;
+
 #[derive(Resource)]
 pub struct MyGamepad(pub Gamepad);
 
@@ -48,19 +52,27 @@ pub fn gamepad_connections(
         }
     }
 }
-struct Position {
-    x: f32,
-    y: f32,
-}
+
+/// Handles the gamepad input
+/// # Arguments
+/// * `my_gamepad` - The gamepad that is connected
+/// * `gamepad_evr` - The event reader for the gamepad
+/// * `player` - Query that fetches the input handler of the player, gets provided when called as a system
 pub fn gamepad_input(
     my_gamepad: Option<Res<MyGamepad>>,
     mut gamepad_evr: EventReader<GamepadEvent>,
+    mut player: Query<(&mut InputHandler), With<Player>>,
 ) {
     let _gamepad = if let Some(gp) = my_gamepad {
         // a gamepad is connected, we have the id
         gp.0
     } else {
         // no gamepad is connected
+        return;
+    };
+    let mut handler = if let Ok(mut p_handler) = player.get_single_mut() {
+        p_handler
+    } else {
         return;
     };
     const DEADZONE: f32 = 0.2;
@@ -71,10 +83,11 @@ pub fn gamepad_input(
                     GamepadAxisType::LeftStickX => {
                         //add small deadzones
                         if f32::abs(axis_changed.value) > DEADZONE {
-                            //joystick moved beyond Deadzone
+                            handler.walking = axis_changed.value;
                             println!("Joystick moved on X Axis");
                         } else {
                             //joystick position reset to zero
+                            handler.walking = 0.0;
                         }
                     }
                     GamepadAxisType::LeftStickY => {
@@ -103,7 +116,7 @@ pub fn gamepad_input(
                     button_definitions::JUMP_BUTTON => {
                         if button.value > 0.0 {
                             //Button pressed
-                            input_handler::jump_pressed();
+                            handler.jumping = true;
                         } else {
                             //Button not pressed
                         }
