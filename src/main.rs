@@ -30,7 +30,8 @@ fn main() {
                 input_system::gamepad::gamepad_input,
                 input_system::keyboard::keyboard_input,
                 movement_system::player_movement::player_movement,
-            ),
+                asset_system::collision::spawn_wall_collision,
+                )
         )
         .insert_resource(LevelSelection::index(0))
         .insert_resource(LdtkSettings {

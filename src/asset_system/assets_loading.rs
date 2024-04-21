@@ -14,4 +14,5 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     });
 } 
 
+#[warn(dead_code)]
 pub const GRID_SIZE: i32 = 16;
