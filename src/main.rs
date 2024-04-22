@@ -38,6 +38,9 @@ fn main() {
                 input_system::keyboard::keyboard_input,
                 movement_system::player_movement::player_movement,
                 asset_system::collision::spawn_wall_collision,
+                asset_system::ground::spawn_ground_sensor,
+                asset_system::ground::ground_detection,
+                asset_system::ground::update_on_ground,
                 )
         )
         .register_ldtk_entity::<asset_system::players::PlayerBundle>("Player")
