@@ -5,7 +5,7 @@ use bevy_rapier2d::prelude::*;
 use crate::asset_system::ground::GroundDetection;
 
 ///Defines the speed of the player
-const PLAYER_SPEED: f32 = 300.0;
+const PLAYER_SPEED: f32 = 100.0;
 /// Moves the player based on the input
 ///
 /// This function moves the player based on the input_handler.
@@ -18,7 +18,7 @@ pub fn player_movement(mut query: Query<(&mut Velocity, &mut InputHandler, &Grou
             velocity.linvel.x = PLAYER_SPEED * input_handler.walking;
         //implements jumping
         if input_handler.jumping && ground_detection.on_ground {
-            velocity.linvel.y = 200.0;
+            velocity.linvel.y = 300.0;
             input_handler.jumping = false;
         }
     }

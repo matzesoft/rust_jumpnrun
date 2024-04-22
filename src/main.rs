@@ -24,6 +24,10 @@ fn main() {
             RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0),
             RapierDebugRenderPlugin::default(),
         ))
+        .insert_resource(RapierConfiguration {
+            gravity: Vec2::new(0.0, -9.81 * 50.0),
+            ..Default::default()
+        })
         .insert_resource(LevelSelection::index(0))
         .insert_resource(LdtkSettings {
             set_clear_color: SetClearColor::FromLevelBackground,
