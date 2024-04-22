@@ -12,7 +12,4 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         ldtk_handle: asset_server.load("jump_n_run.ldtk"),
         ..Default::default()
     });
-} 
-
-#[warn(dead_code)]
-pub const GRID_SIZE: i32 = 16;
+}

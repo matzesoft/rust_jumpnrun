@@ -17,7 +17,7 @@ pub fn player_movement(mut query: Query<(&mut Velocity, &mut InputHandler), With
         velocity.linvel.x = PLAYER_SPEED * input_handler.walking;
         //implements jumping
         if input_handler.jumping {
-            velocity.linvel.y = 500.0;
+            velocity.linvel.y = 200.0;
             input_handler.jumping = false;
         }
     }

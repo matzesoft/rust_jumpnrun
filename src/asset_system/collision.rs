@@ -6,7 +6,6 @@ use std::collections::{HashMap, HashSet};
 
 use crate::asset_system::walls::Wall;
 
-
 #[derive(Clone, Default, Bundle, LdtkIntCell)]
 pub struct ColliderBundle {
     pub collider: Collider,
@@ -18,21 +17,13 @@ pub struct ColliderBundle {
     pub density: ColliderMassProperties,
 }
 
-#[derive(Clone, Default, Bundle, LdtkIntCell)]
-pub struct SensorBundle {
-    pub collider: Collider,
-    pub sensor: Sensor,
-    pub active_events: ActiveEvents,
-    pub rotation_constraints: LockedAxes,
-}
-
 impl From<&EntityInstance> for ColliderBundle {
     fn from(entity_instance: &EntityInstance) -> ColliderBundle {
         let rotation_constraints = LockedAxes::ROTATION_LOCKED;
 
         match entity_instance.identifier.as_ref() {
             "Player" => ColliderBundle {
-                collider: Collider::cuboid(6., 14.),
+                collider: Collider::cuboid(8.0, 8.0),
                 rigid_body: RigidBody::Dynamic,
                 friction: Friction {
                     coefficient: 0.0,
@@ -44,35 +35,6 @@ impl From<&EntityInstance> for ColliderBundle {
             _ => ColliderBundle::default(),
         }
     }
-}
-
-impl From<IntGridCell> for SensorBundle {
-    fn from(int_grid_cell: IntGridCell) -> SensorBundle {
-        let rotation_constraints = LockedAxes::ROTATION_LOCKED;
-
-        // ladder
-        if int_grid_cell.value == 2 {
-            SensorBundle {
-                collider: Collider::cuboid(8., 8.),
-                sensor: Sensor,
-                rotation_constraints,
-                active_events: ActiveEvents::COLLISION_EVENTS,
-            }
-        } else {
-            SensorBundle::default()
-        }
-    }
-}
-
-#[derive(Clone, Default, Component)]
-pub struct GroundDetection {
-    pub on_ground: bool,
-}
-
-#[derive(Component)]
-pub struct GroundSensor {
-    pub ground_detection_entity: Entity,
-    pub intersecting_ground_entities: HashSet<Entity>,
 }
 
 pub fn spawn_wall_collision(

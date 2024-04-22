@@ -19,9 +19,16 @@ fn main() {
                     ..Default::default()
                 }),
         )
-        .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
-        .add_plugins(RapierDebugRenderPlugin::default())
-        .add_plugins(LdtkPlugin)
+        .add_plugins((
+            LdtkPlugin,
+            RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0),
+            RapierDebugRenderPlugin::default(),
+        ))
+        .insert_resource(LevelSelection::index(0))
+        .insert_resource(LdtkSettings {
+            set_clear_color: SetClearColor::FromLevelBackground,
+            ..Default::default()
+        })
         .add_systems(Startup, asset_system::assets_loading::setup)
         .add_systems(
             Update,
@@ -33,13 +40,7 @@ fn main() {
                 asset_system::collision::spawn_wall_collision,
                 )
         )
-        .insert_resource(LevelSelection::index(0))
-        .insert_resource(LdtkSettings {
-            set_clear_color: SetClearColor::FromLevelBackground,
-            ..Default::default()
-        })
         .register_ldtk_entity::<asset_system::players::PlayerBundle>("Player")
         .register_ldtk_int_cell::<asset_system::walls::WallBundle>(1)
-        .init_resource::<asset_system::walls::LevelWalls>()
         .run();
 }
