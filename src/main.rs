@@ -5,6 +5,7 @@ use bevy_rapier2d::prelude::*;
 mod asset_system;
 mod input_system;
 mod movement_system;
+mod score_system;
 
 fn main() {
     App::new()
@@ -22,7 +23,13 @@ fn main() {
         .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0))
         .add_plugins(RapierDebugRenderPlugin::default())
         .add_plugins(LdtkPlugin)
-        .add_systems(Startup, asset_system::assets_loading::setup)
+        .add_systems(
+            Startup,
+            (
+                asset_system::assets_loading::setup,
+                score_system::time::setup,
+            ),
+        )
         .add_systems(
             Update,
             (
@@ -30,6 +37,7 @@ fn main() {
                 input_system::gamepad::gamepad_input,
                 input_system::keyboard::keyboard_input,
                 movement_system::player_movement::player_movement,
+                score_system::time::change_time_text,
             ),
         )
         .insert_resource(LevelSelection::index(0))
