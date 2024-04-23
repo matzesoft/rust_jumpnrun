@@ -1,3 +1,11 @@
-pub fn print_hello() {
-    println!("Hello from Rust JumpNRun!");
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum PlayerMessage {
+    Ping,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ServerMessage {
+    Pong,
 }
