@@ -5,6 +5,7 @@ use bevy_rapier2d::prelude::*;
 mod asset_system;
 mod input_system;
 mod movement_system;
+mod score_system;
 
 fn main() {
     App::new()
@@ -34,6 +35,7 @@ fn main() {
             ..Default::default()
         })
         .add_systems(Startup, asset_system::assets_loading::setup)
+
         .add_systems(
             Update,
             (
@@ -45,7 +47,8 @@ fn main() {
                 asset_system::ground::spawn_ground_sensor,
                 asset_system::ground::ground_detection,
                 asset_system::ground::update_on_ground,
-                )
+                score_system::time::change_time_text,
+            ),
         )
         .register_ldtk_entity::<asset_system::players::PlayerBundle>("Player")
         .register_ldtk_int_cell::<asset_system::walls::WallBundle>(1)
