@@ -116,9 +116,13 @@ pub fn gamepad_input(
                     button_definitions::JUMP_BUTTON => {
                         if button.value > 0.0 {
                             //Button pressed
-                            handler.jumping = true;
+                            if !handler.jumping_pressed {
+                                handler.jumping = true;
+                                handler.jumping_pressed = true;
+                            }
                         } else {
                             //Button not pressed
+                            handler.jumping_pressed = false;
                         }
                     }
                     _ => {}

@@ -11,5 +11,6 @@ use bevy::prelude::Component;
 #[derive(Clone, Default, Component)]
 pub struct InputHandler {
     pub jumping: bool,
+    pub jumping_pressed: bool, // used to prevent multiple jumps by holding the jump button
     pub walking: f32,
 }

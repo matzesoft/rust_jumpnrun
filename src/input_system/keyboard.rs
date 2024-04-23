@@ -26,7 +26,10 @@ pub fn keyboard_input(
         match ev {
             button_definitions::JUMP_BUTTON => {
                 //jump key pressed
-                handler.jumping = true;
+                if !handler.jumping_pressed {
+                    handler.jumping = true;
+                    handler.jumping_pressed = true;
+                }
             }
             button_definitions::LEFT_BUTTON => {
                 //left key pressed
@@ -35,6 +38,15 @@ pub fn keyboard_input(
             button_definitions::RIGHT_BUTTON => {
                 //right key pressed
                 movement_direction += 1.0;
+            }
+            _ => {}
+        }
+    }
+    for ev in keyboard_input.get_just_released() {
+        match ev {
+            button_definitions::JUMP_BUTTON => {
+                //jump key released
+                handler.jumping_pressed = false;
             }
             _ => {}
         }
