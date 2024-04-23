@@ -1842,6 +1842,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "game"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_ecs_ldtk",
+ "bevy_ecs_tilemap",
+ "bevy_rapier2d",
+]
+
+[[package]]
 name = "getrandom"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3172,16 +3182,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust_jumpnrun_game"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "bevy_ecs_ldtk",
- "bevy_ecs_tilemap",
- "bevy_rapier2d",
-]
-
-[[package]]
 name = "rustc-demangle"
 version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3279,6 +3279,10 @@ dependencies = [
  "ryu",
  "serde",
 ]
+
+[[package]]
+name = "server"
+version = "0.1.0"
 
 [[package]]
 name = "sharded-slab"
