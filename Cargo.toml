@@ -7,5 +7,3 @@ members = [
 
 [workspace.dependencies]
 bevy = "0.12.1"
-[target.wasm32-unknown-unknown]
-runner = "wasm-server-runner"
