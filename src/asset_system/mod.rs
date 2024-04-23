@@ -2,3 +2,5 @@
 pub mod assets_loading;
 pub mod walls;
 pub mod players;
+pub mod collision;
+pub mod ground;

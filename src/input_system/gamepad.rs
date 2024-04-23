@@ -3,6 +3,7 @@ use super::player;
 use super::sprite;*/
 
 use super::input_handler;
+use crate::asset_system::ground::GroundDetection;
 use crate::asset_system::players::Player;
 use crate::input_system::input_handler::InputHandler;
 use bevy::input::gamepad::*;
@@ -61,7 +62,7 @@ pub fn gamepad_connections(
 pub fn gamepad_input(
     my_gamepad: Option<Res<MyGamepad>>,
     mut gamepad_evr: EventReader<GamepadEvent>,
-    mut player: Query<(&mut InputHandler), With<Player>>,
+    mut player: Query<(&mut InputHandler, &GroundDetection), With<Player>>,
 ) {
     let _gamepad = if let Some(gp) = my_gamepad {
         // a gamepad is connected, we have the id
@@ -70,11 +71,12 @@ pub fn gamepad_input(
         // no gamepad is connected
         return;
     };
-    let mut handler = if let Ok(mut p_handler) = player.get_single_mut() {
-        p_handler
-    } else {
-        return;
-    };
+    let (mut handler, ground_detection) =
+        if let Ok((mut p_handler, p_ground_detection)) = player.get_single_mut() {
+            (p_handler, p_ground_detection)
+        } else {
+            return;
+        };
     const DEADZONE: f32 = 0.2;
     for ev in gamepad_evr.read() {
         match ev {
@@ -116,9 +118,13 @@ pub fn gamepad_input(
                     button_definitions::JUMP_BUTTON => {
                         if button.value > 0.0 {
                             //Button pressed
-                            handler.jumping = true;
+                            if !handler.jumping_pressed && ground_detection.on_ground {
+                                handler.jumping = true;
+                                handler.jumping_pressed = true;
+                            }
                         } else {
                             //Button not pressed
+                            handler.jumping_pressed = false;
                         }
                     }
                     _ => {}

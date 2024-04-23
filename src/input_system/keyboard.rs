@@ -1,3 +1,4 @@
+use crate::asset_system::ground::GroundDetection;
 use crate::asset_system::players::Player;
 use crate::input_system::input_handler::InputHandler;
 use bevy::prelude::*;
@@ -12,13 +13,14 @@ mod button_definitions {
 }
 pub fn keyboard_input(
     keyboard_input: Res<Input<KeyCode>>,
-    mut player: Query<(&mut InputHandler), With<Player>>,
+    mut player: Query<(&mut InputHandler, &GroundDetection), With<Player>>,
 ) {
-    let mut handler = if let Ok(mut p_handler) = player.get_single_mut() {
-        p_handler
-    } else {
-        return;
-    };
+    let (mut handler, ground_detection) =
+        if let Ok((mut p_handler, p_ground_detection)) = player.get_single_mut() {
+            (p_handler, p_ground_detection)
+        } else {
+            return;
+        };
     //movement_direction is used to determine the direction of the player,
     //to enable the player to press left and right and then don't move
     let mut movement_direction: f32 = 0.0;
@@ -26,7 +28,10 @@ pub fn keyboard_input(
         match ev {
             button_definitions::JUMP_BUTTON => {
                 //jump key pressed
-                handler.jumping = true;
+                if !handler.jumping_pressed && ground_detection.on_ground {
+                    handler.jumping = true;
+                    handler.jumping_pressed = true;
+                }
             }
             button_definitions::LEFT_BUTTON => {
                 //left key pressed
@@ -35,6 +40,15 @@ pub fn keyboard_input(
             button_definitions::RIGHT_BUTTON => {
                 //right key pressed
                 movement_direction += 1.0;
+            }
+            _ => {}
+        }
+    }
+    for ev in keyboard_input.get_just_released() {
+        match ev {
+            button_definitions::JUMP_BUTTON => {
+                //jump key released
+                handler.jumping_pressed = false;
             }
             _ => {}
         }
