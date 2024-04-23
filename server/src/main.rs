@@ -6,7 +6,7 @@ use bevy::{
 use bevy_quinnet::server::{
     certificate::CertificateRetrievalMode, QuinnetServerPlugin, Server, ServerConfiguration,
 };
-use shared::PlayerMessage;
+use shared::{PlayerMessage, ServerMessage};
 
 pub fn main() {
     let mut app = App::new();
@@ -36,7 +36,13 @@ fn handle_player_messages(mut server: ResMut<Server>) {
         while let Some(message) = endpoint.try_receive_message_from::<PlayerMessage>(client_id) {
             match message {
                 PlayerMessage::Ping => {
-                    println!("Received ping from client");
+                    let _ = endpoint.send_message(client_id, ServerMessage::Pong);
+                },
+                PlayerMessage::PlayerWalked { direction } => {
+                    println!("Played {} walked: {}", client_id, direction);
+                },
+                PlayerMessage::Disconnect => {
+                    println!("Received disconnect from client with id {}!", client_id);
                 }
             }
         }
