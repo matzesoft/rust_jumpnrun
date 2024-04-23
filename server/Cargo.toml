@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 shared = {workspace = true}
+bevy_quinnet = {workspace = true}
+serde = {workspace = true}

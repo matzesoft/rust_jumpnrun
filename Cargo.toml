@@ -7,4 +7,6 @@ members = [
 
 [workspace.dependencies]
 bevy = "0.12.1"
+bevy_quinnet = "0.6"
+serde = "1.0.198"
 shared = { path = "./shared" }
