@@ -3172,7 +3172,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "rust_jumpnrun"
+name = "rust_jumpnrun_game"
 version = "0.1.0"
 dependencies = [
  "bevy",
