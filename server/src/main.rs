@@ -1,3 +1,5 @@
+use shared::print_hello;
+
 fn main() {
-    println!("Hello, world!");
+    print_hello();
 }

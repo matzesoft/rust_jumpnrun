@@ -7,3 +7,4 @@ members = [
 
 [workspace.dependencies]
 bevy = "0.12.1"
+shared = { path = "./shared" }

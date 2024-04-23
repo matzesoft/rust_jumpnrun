@@ -1849,6 +1849,7 @@ dependencies = [
  "bevy_ecs_ldtk",
  "bevy_ecs_tilemap",
  "bevy_rapier2d",
+ "shared",
 ]
 
 [[package]]
@@ -3283,6 +3284,9 @@ dependencies = [
 [[package]]
 name = "server"
 version = "0.1.0"
+dependencies = [
+ "shared",
+]
 
 [[package]]
 name = "sharded-slab"
