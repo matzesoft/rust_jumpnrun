@@ -3672,6 +3672,7 @@ dependencies = [
 name = "server"
 version = "0.1.0"
 dependencies = [
+ "bevy",
  "bevy_quinnet",
  "serde",
  "shared",
@@ -3689,6 +3690,9 @@ dependencies = [
 [[package]]
 name = "shared"
 version = "0.1.0"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "shlex"
