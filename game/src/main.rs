@@ -5,8 +5,8 @@ use bevy_rapier2d::prelude::*;
 mod asset_system;
 mod input_system;
 mod movement_system;
-mod score_system;
 mod multiplayer_system;
+mod score_system;
 
 fn main() {
     let mut app = App::new();
@@ -35,7 +35,13 @@ fn main() {
         set_clear_color: SetClearColor::FromLevelBackground,
         ..Default::default()
     });
-    app.add_systems(Startup, asset_system::assets_loading::setup);
+    app.add_systems(
+        Startup,
+        (
+            asset_system::assets_loading::setup,
+            score_system::time::setup,
+        ),
+    );
 
     app.add_systems(
         Update,
