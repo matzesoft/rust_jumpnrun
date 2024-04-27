@@ -3675,6 +3675,7 @@ dependencies = [
  "bevy",
  "bevy_quinnet",
  "serde",
+ "serde_json",
  "shared",
 ]
 
