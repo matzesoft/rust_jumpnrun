@@ -9,8 +9,8 @@ pub struct PlayerMovement {
     pub translation_y: f32,
 }
 
-/// Stores the name and movement of a single player. Needed to show
-/// the position of other players in the background of the game.
+/// Stores the name and movement of a player. Needed to show the
+/// position of other players in the background of the game.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerMovedUpdate {
     pub player_name: String,
@@ -26,12 +26,12 @@ pub enum PlayerMessage {
     AskIfPlayerNameIsAvailable {
         player_name: String,
     },
-    Connect {
+    JoinGame {
         player_name: String,
         movement: PlayerMovement,
     },
     PlayerMoved(PlayerMovement),
-    Disconnect,
+    LeaveGame,
 }
 
 /// Messages sent from the server to the player.

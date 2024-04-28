@@ -4,6 +4,33 @@ use bevy_quinnet::server::{
 };
 use shared::{PlayerMessage, PlayerMovedUpdate, PlayerMovement, ServerMessage};
 
+/// Represents a client currently playing the game. This component will be spawned
+/// when the client calls the ``PlayerMessage::JoinGame`` function.
+#[derive(Component)]
+struct Player {
+    name: String,
+    /// The id given to the client from the ``bevy_quinnet`` library.
+    client_id: u64,
+}
+
+/// Represents the velocity of a player in the game.
+#[derive(Component)]
+struct Velocity {
+    x: f32,
+    y: f32,
+}
+
+/// Represents the translation of a player in the game.
+#[derive(Component)]
+struct Translation {
+    x: f32,
+    y: f32,
+}
+
+/// Timer for sending updates to clients about the positons of the other players.
+#[derive(Resource, Deref, DerefMut)]
+struct UpdateMovedPlayersTimer(Timer);
+
 pub fn main() {
     let mut app = App::new();
     app.add_plugins((
@@ -14,7 +41,7 @@ pub fn main() {
     app.add_plugins(QuinnetServerPlugin::default());
     app.add_systems(Startup, (start_listening));
     app.add_systems(Update, (handle_player_messages, send_updates_to_players));
-    app.insert_resource(UpdatePlayersTimer(Timer::from_seconds(
+    app.insert_resource(UpdateMovedPlayersTimer(Timer::from_seconds(
         1.0,
         TimerMode::Repeating,
     )));
@@ -46,7 +73,7 @@ fn handle_player_messages(
                 PlayerMessage::Ping => {
                     let _ = endpoint.send_message(client_id, ServerMessage::Pong);
                 }
-                PlayerMessage::Connect {
+                PlayerMessage::JoinGame {
                     player_name,
                     movement,
                 } => {
@@ -76,7 +103,7 @@ fn handle_player_messages(
                         }
                     }
                 }
-                PlayerMessage::Disconnect => {
+                PlayerMessage::LeaveGame => {
                     println!("Received disconnect from client with id {}!", client_id);
                 }
                 _ => {
@@ -89,7 +116,7 @@ fn handle_player_messages(
 
 fn send_updates_to_players(
     time: Res<Time>,
-    mut timer: ResMut<UpdatePlayersTimer>,
+    mut timer: ResMut<UpdateMovedPlayersTimer>,
     mut server: ResMut<Server>,
     players: Query<(&Player, &Velocity, &Translation), With<Player>>,
 ) {
@@ -124,24 +151,3 @@ fn send_updates_to_players(
         );
     }
 }
-
-#[derive(Component)]
-struct Player {
-    name: String,
-    client_id: u64,
-}
-
-#[derive(Component)]
-struct Velocity {
-    x: f32,
-    y: f32,
-}
-
-#[derive(Component)]
-struct Translation {
-    x: f32,
-    y: f32,
-}
-
-#[derive(Resource, Deref, DerefMut)]
-struct UpdatePlayersTimer(Timer);

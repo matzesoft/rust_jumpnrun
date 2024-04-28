@@ -56,7 +56,7 @@ fn handle_connection_event(
         connection_event.clear();
 
         // TODO: Set Connect function at a better fitting app cycle point!
-        let message = PlayerMessage::Connect {
+        let message = PlayerMessage::JoinGame {
             player_name: "Bobert".to_string(), // TODO: Set player name dynamically,
             movement: PlayerMovement {
                 velocity_x: 0.0,
