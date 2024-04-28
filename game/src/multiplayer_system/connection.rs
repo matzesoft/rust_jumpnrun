@@ -8,17 +8,18 @@ use bevy::{
         schedule::IntoSystemConfigs,
         system::{Query, Res, ResMut},
     },
+    transform::components::GlobalTransform,
 };
 use bevy_quinnet::client::{
     certificate::CertificateVerificationMode,
     connection::{ConnectionConfiguration, ConnectionEvent, ConnectionLostEvent},
     Client, QuinnetClientPlugin,
 };
+use bevy_rapier2d::dynamics::Velocity;
 
 use crate::asset_system::players::Player;
-use crate::input_system::input_handler::InputHandler;
 
-use shared::{PlayerMessage, ServerMessage};
+use shared::{PlayerMessage, PlayerMovement, ServerMessage};
 
 pub fn setup_client(app: &mut App) {
     app.add_plugins(QuinnetClientPlugin::default());
@@ -29,7 +30,7 @@ pub fn setup_client(app: &mut App) {
             handle_connection_event,
             handle_connection_lost_event,
             handle_server_messages.run_if(is_player_connected),
-            player_moved,
+            updte_player_movement,
             on_app_exit,
         ),
     );
@@ -46,10 +47,26 @@ fn start_connection(mut client: ResMut<Client>) {
         .unwrap();
 }
 
-fn handle_connection_event(mut connection_event: EventReader<ConnectionEvent>) {
+fn handle_connection_event(
+    client: Res<Client>,
+    mut connection_event: EventReader<ConnectionEvent>,
+) {
     if !connection_event.is_empty() {
         println!("Player connected to server :)");
         connection_event.clear();
+
+        // TODO: Set Connect function at a better fitting app cycle point!
+        let movement = PlayerMovement {
+            player_name: "Bobert".to_string(), // TODO: Set player name dynamically
+            velocity_x: 0.0,
+            velocity_y: 0.0,
+            translation_x: 0.0,
+            translation_y: 0.0,
+        };
+
+        client
+            .connection()
+            .try_send_message(PlayerMessage::Connect(movement));
     }
 }
 
@@ -65,15 +82,15 @@ fn handle_connection_lost_event(mut connection_lost_event: EventReader<Connectio
 }
 
 pub fn on_app_exit(app_exit_events: EventReader<AppExit>, client: Res<Client>) {
-    if !app_exit_events.is_empty() {
-        client
-            .connection()
-            .send_message(PlayerMessage::Disconnect {})
-            .unwrap();
+    // if !app_exit_events.is_empty() {
+    //     client
+    //         .connection()
+    //         .send_message(PlayerMessage::Disconnect {})
+    //         .unwrap();
 
-        // TODO: event to let the async client send his last messages.
-        sleep(Duration::from_secs_f32(0.1));
-    }
+    //     // TODO: event to let the async client send his last messages.
+    //     sleep(Duration::from_secs_f32(0.1));
+    // }
 }
 
 fn handle_server_messages(mut client: ResMut<Client>) {
@@ -83,14 +100,42 @@ fn handle_server_messages(mut client: ResMut<Client>) {
     {
         match message {
             ServerMessage::Pong => println!("Received pong 🏓"),
+            ServerMessage::UpdateMovedPlayers(players_movement) => {
+                for movement in players_movement.iter() {
+                    println!("Player {} moved:", movement.player_name);
+                    println!(
+                        "Velocity: x {}, y {}",
+                        movement.velocity_x, movement.velocity_y
+                    );
+                    println!(
+                        "Translation: x {}, y {}",
+                        movement.translation_x, movement.translation_y
+                    );
+                }
+            }
+
+            _ => {
+                println!("Got unknown server message.");
+            }
         }
     }
 }
 
-pub fn player_moved(mut client: ResMut<Client>, mut query: Query<&mut InputHandler, With<Player>>) {
-    for mut input_handler in &mut query {
-        if input_handler.walking != 0.0 {
-            client.connection().try_send_message(PlayerMessage::PlayerWalked { direction: input_handler.walking });
-        }
+pub fn updte_player_movement(
+    client: Res<Client>,
+    mut query: Query<(&mut Velocity, &mut GlobalTransform), With<Player>>,
+) {
+    for (velocity, transform) in &mut query {
+        let movement = PlayerMovement {
+            player_name: "Bobert".to_string(), // TODO: Set player name dynamically
+            velocity_x: velocity.linvel.x,
+            velocity_y: velocity.linvel.y,
+            translation_x: transform.translation().x,
+            translation_y: transform.translation().y,
+        };
+
+        client
+            .connection()
+            .try_send_message(PlayerMessage::PlayerMoved(movement));
     }
 }
