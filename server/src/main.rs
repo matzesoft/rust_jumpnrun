@@ -1,10 +1,8 @@
-use bevy::{
-    app::ScheduleRunnerPlugin, log::LogPlugin, prelude::*, time::TimePlugin,
-};
+use bevy::{app::ScheduleRunnerPlugin, log::LogPlugin, prelude::*, time::TimePlugin};
 use bevy_quinnet::server::{
     certificate::CertificateRetrievalMode, QuinnetServerPlugin, Server, ServerConfiguration,
 };
-use shared::{PlayerMessage, PlayerMovement, ServerMessage};
+use shared::{PlayerMessage, PlayerMovedUpdate, PlayerMovement, ServerMessage};
 
 pub fn main() {
     let mut app = App::new();
@@ -48,10 +46,13 @@ fn handle_player_messages(
                 PlayerMessage::Ping => {
                     let _ = endpoint.send_message(client_id, ServerMessage::Pong);
                 }
-                PlayerMessage::Connect(movement) => {
+                PlayerMessage::Connect {
+                    player_name,
+                    movement,
+                } => {
                     commands.spawn((
                         Player {
-                            name: movement.player_name,
+                            name: player_name,
                             client_id,
                         },
                         Velocity {
@@ -75,7 +76,7 @@ fn handle_player_messages(
                         }
                     }
                 }
-                PlayerMessage::Disconnect { player_name } => {
+                PlayerMessage::Disconnect => {
                     println!("Received disconnect from client with id {}!", client_id);
                 }
                 _ => {
@@ -93,30 +94,34 @@ fn send_updates_to_players(
     players: Query<(&Player, &Velocity, &Translation), With<Player>>,
 ) {
     timer.tick(time.delta());
+    if !timer.finished() {
+        return;
+    };
 
-    if timer.finished() {
-        let mut endpoint = server.endpoint_mut();
+    let mut endpoint = server.endpoint_mut();
 
-        for client_id in endpoint.clients() {
-            let mut players_movements: Vec<PlayerMovement> = Vec::new();
+    for client_id in endpoint.clients() {
+        let mut players_movements: Vec<PlayerMovedUpdate> = Vec::new();
 
-            for (player, velocity, translation) in players.iter() {
-                if player.client_id != client_id {
-                    players_movements.push(PlayerMovement {
-                        player_name: player.name.clone(),
+        for (player, velocity, translation) in players.iter() {
+            if player.client_id != client_id {
+                let update = PlayerMovedUpdate {
+                    player_name: player.name.clone(),
+                    movement: PlayerMovement {
                         velocity_x: velocity.x,
                         velocity_y: velocity.y,
                         translation_x: translation.x,
                         translation_y: translation.y,
-                    });
-                }
+                    },
+                };
+                players_movements.push(update);
             }
-
-            endpoint.try_send_message(
-                client_id,
-                ServerMessage::UpdateMovedPlayers(players_movements),
-            );
         }
+
+        endpoint.try_send_message(
+            client_id,
+            ServerMessage::UpdateMovedPlayers(players_movements),
+        );
     }
 }
 

@@ -56,17 +56,17 @@ fn handle_connection_event(
         connection_event.clear();
 
         // TODO: Set Connect function at a better fitting app cycle point!
-        let movement = PlayerMovement {
-            player_name: "Bobert".to_string(), // TODO: Set player name dynamically
-            velocity_x: 0.0,
-            velocity_y: 0.0,
-            translation_x: 0.0,
-            translation_y: 0.0,
+        let message = PlayerMessage::Connect {
+            player_name: "Bobert".to_string(), // TODO: Set player name dynamically,
+            movement: PlayerMovement {
+                velocity_x: 0.0,
+                velocity_y: 0.0,
+                translation_x: 0.0,
+                translation_y: 0.0,
+            },
         };
 
-        client
-            .connection()
-            .try_send_message(PlayerMessage::Connect(movement));
+        client.connection().try_send_message(message);
     }
 }
 
@@ -100,9 +100,11 @@ fn handle_server_messages(mut client: ResMut<Client>) {
     {
         match message {
             ServerMessage::Pong => println!("Received pong 🏓"),
-            ServerMessage::UpdateMovedPlayers(players_movement) => {
-                for movement in players_movement.iter() {
-                    println!("Player {} moved:", movement.player_name);
+            ServerMessage::UpdateMovedPlayers(players_moved_updates) => {
+                for update in players_moved_updates.iter() {
+                    let movement = &update.movement;
+
+                    println!("Player {} moved:", update.player_name);
                     println!(
                         "Velocity: x {}, y {}",
                         movement.velocity_x, movement.velocity_y
@@ -127,7 +129,6 @@ pub fn updte_player_movement(
 ) {
     for (velocity, transform) in &mut query {
         let movement = PlayerMovement {
-            player_name: "Bobert".to_string(), // TODO: Set player name dynamically
             velocity_x: velocity.linvel.x,
             velocity_y: velocity.linvel.y,
             translation_x: transform.translation().x,
