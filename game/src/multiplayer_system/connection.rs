@@ -30,7 +30,7 @@ pub fn setup_client(app: &mut App) {
             handle_connection_event,
             handle_connection_lost_event,
             handle_server_messages.run_if(is_player_connected),
-            updte_player_movement,
+            updte_player_movement.run_if(is_player_connected),
             on_app_exit,
         ),
     );
@@ -82,15 +82,15 @@ fn handle_connection_lost_event(mut connection_lost_event: EventReader<Connectio
 }
 
 pub fn on_app_exit(app_exit_events: EventReader<AppExit>, client: Res<Client>) {
-    // if !app_exit_events.is_empty() {
-    //     client
-    //         .connection()
-    //         .send_message(PlayerMessage::Disconnect {})
-    //         .unwrap();
+    if !app_exit_events.is_empty() {
+        client
+            .connection()
+            .try_send_message(PlayerMessage::LeaveGame);
 
-    //     // TODO: event to let the async client send his last messages.
-    //     sleep(Duration::from_secs_f32(0.1));
-    // }
+            println!("Received app exit event");
+        // TODO: event to let the async client send his last messages.
+        sleep(Duration::from_secs_f32(10.0));
+    }
 }
 
 fn handle_server_messages(mut client: ResMut<Client>) {
@@ -117,7 +117,7 @@ fn handle_server_messages(mut client: ResMut<Client>) {
             }
 
             _ => {
-                println!("Got unknown server message.");
+                println!("Received unknown server message.");
             }
         }
     }

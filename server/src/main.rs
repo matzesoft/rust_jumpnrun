@@ -27,6 +27,12 @@ struct Translation {
     y: f32,
 }
 
+/// Individuell timer for each player to check when the last movement update
+/// has happend. If there was no update for a period of time, the player
+/// will be removed from the server.
+#[derive(Component)]
+struct InactiveTimer(Timer);
+
 /// Timer for sending updates to clients about the positons of the other players.
 #[derive(Resource, Deref, DerefMut)]
 struct UpdateMovedPlayersTimer(Timer);
@@ -40,7 +46,14 @@ pub fn main() {
     ));
     app.add_plugins(QuinnetServerPlugin::default());
     app.add_systems(Startup, (start_listening));
-    app.add_systems(Update, (handle_player_messages, send_updates_to_players));
+    app.add_systems(
+        Update,
+        (
+            handle_player_messages,
+            send_updates_to_players,
+            remove_inactive_players,
+        ),
+    );
     app.insert_resource(UpdateMovedPlayersTimer(Timer::from_seconds(
         1.0,
         TimerMode::Repeating,
@@ -60,10 +73,21 @@ fn start_listening(mut server: ResMut<Server>) {
         .unwrap();
 }
 
+// TODO: Break function into multiple events
 fn handle_player_messages(
     mut commands: Commands,
-    mut players: Query<(&Player, &mut Velocity, &mut Translation), With<Player>>,
+    mut players: Query<
+        (
+            Entity,
+            &Player,
+            &mut Velocity,
+            &mut Translation,
+            &mut InactiveTimer,
+        ),
+        With<Player>,
+    >,
     mut server: ResMut<Server>,
+    time: Res<Time>,
 ) {
     let mut endpoint = server.endpoint_mut();
 
@@ -77,6 +101,7 @@ fn handle_player_messages(
                     player_name,
                     movement,
                 } => {
+                    println!("Player {} joined the game.", player_name);
                     commands.spawn((
                         Player {
                             name: player_name,
@@ -90,24 +115,36 @@ fn handle_player_messages(
                             x: movement.translation_x,
                             y: movement.translation_y,
                         },
+                        InactiveTimer(Timer::from_seconds(10.0, TimerMode::Once)),
                     ));
                 }
                 PlayerMessage::PlayerMoved(movement) => {
-                    for (player, mut velocity, mut translation) in players.iter_mut() {
+                    for (_entity, player, mut velocity, mut translation, mut inactive_timer) in
+                        players.iter_mut()
+                    {
                         if player.client_id == client_id {
                             velocity.x = movement.velocity_x;
                             velocity.y = movement.velocity_y;
                             translation.x = movement.translation_x;
                             translation.y = movement.translation_y;
+
+                            inactive_timer.0.reset();
                             break;
                         }
                     }
                 }
                 PlayerMessage::LeaveGame => {
-                    println!("Received disconnect from client with id {}!", client_id);
+                    for (entity, player, mut _velocity, mut _translation, mut _inactive_timer) in
+                        players.iter_mut()
+                    {
+                        if player.client_id == client_id {
+                            println!("Player {} left the game.", player.name);
+                            commands.entity(entity).despawn();
+                        }
+                    }
                 }
                 _ => {
-                    println!("Received unknown Player Message.")
+                    println!("Received unknown Player Message from client {}.", client_id)
                 }
             }
         }
@@ -149,5 +186,25 @@ fn send_updates_to_players(
             client_id,
             ServerMessage::UpdateMovedPlayers(players_movements),
         );
+    }
+}
+
+/// Ticks the `InactiveTimer` from each player and checks if the timer finished.
+/// If so the player entitiy will be removed and the client disconnected.
+fn remove_inactive_players(
+    time: Res<Time>,
+    mut server: ResMut<Server>,
+    mut commands: Commands,
+    mut players: Query<(Entity, &Player, &mut InactiveTimer), With<Player>>,
+) {
+    for (entity, player, mut inactive_timer) in players.iter_mut() {
+        inactive_timer.0.tick(time.delta());
+
+        if inactive_timer.0.finished() {
+            println!("Removed player {} due to inactivity.", player.name);
+
+            commands.entity(entity).despawn();
+            server.endpoint_mut().try_disconnect_client(player.client_id);
+        }
     }
 }
