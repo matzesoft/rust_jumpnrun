@@ -9,7 +9,7 @@ use shared::{Highscore, PlayerMessage, ServerMessage};
 mod players_system;
 mod highscore_system;
 
-
+/// Creates the bevy app for the server with all required plugins, events, systems and resources.
 pub fn main() {
     let mut app = App::new();
     app.add_plugins((
@@ -50,8 +50,9 @@ pub fn main() {
     app.run();
 }
 
+/// Starts the endpoint of the server via the ``bevy_quinnet`` library.
 fn start_listening(mut server: ResMut<Server>) {
-    // TODO: Inform user when server could not start endpoint!
+    // TODO: Remove unwraps!
     let _ = server
         .start_endpoint(
             ServerConfiguration::from_string("127.0.0.1:6000").unwrap(),
@@ -61,6 +62,8 @@ fn start_listening(mut server: ResMut<Server>) {
         );
 }
 
+/// Handles all messages sent from the clients to the server. Each messages creates a new event
+/// which is than handled by the responsible system.
 fn handle_player_messages(
     mut server: ResMut<Server>,
 
