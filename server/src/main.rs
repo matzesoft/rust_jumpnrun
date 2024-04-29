@@ -143,7 +143,7 @@ fn handle_player_messages(
                         possible_highscore.time_in_seconds, client_id
                     );
 
-                    if highscore.0.time_in_seconds > possible_highscore.time_in_seconds {
+                    if highscore.0.time_in_seconds > possible_highscore.time_in_seconds || highscore.0.time_in_seconds == 0 {
                         highscore.0 = possible_highscore;
 
                         endpoint.try_broadcast_message(
