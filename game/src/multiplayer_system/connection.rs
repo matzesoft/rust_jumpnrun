@@ -57,7 +57,6 @@ fn handle_connection_event(
 
         // TODO: Set Connect function at a better fitting app cycle point!
         let message = PlayerMessage::JoinGame {
-            player_name: "Bobert".to_string(), // TODO: Set player name dynamically,
             movement: PlayerMovement {
                 velocity_x: 0.0,
                 velocity_y: 0.0,
@@ -104,7 +103,7 @@ fn handle_server_messages(mut client: ResMut<Client>) {
                 for update in players_moved_updates.iter() {
                     let movement = &update.movement;
 
-                    println!("Player {} moved:", update.player_name);
+                    println!("Player {} moved:", update.id);
                     println!(
                         "Velocity: x {}, y {}",
                         movement.velocity_x, movement.velocity_y

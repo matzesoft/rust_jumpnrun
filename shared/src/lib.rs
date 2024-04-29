@@ -13,7 +13,7 @@ pub struct PlayerMovement {
 /// position of other players in the background of the game.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerMovedUpdate {
-    pub player_name: String,
+    pub id: u64,
     pub movement: PlayerMovement,
 }
 
@@ -21,13 +21,7 @@ pub struct PlayerMovedUpdate {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PlayerMessage {
     Ping,
-    /// Asks the server if the choosen player name is already used by another player.
-    /// Necessary to make the player name unique and provide a real highscore table.
-    AskIfPlayerNameIsAvailable {
-        player_name: String,
-    },
     JoinGame {
-        player_name: String,
         movement: PlayerMovement,
     },
     PlayerMoved(PlayerMovement),
@@ -38,10 +32,5 @@ pub enum PlayerMessage {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ServerMessage {
     Pong,
-    /// Response to the ``PlayerMessage::AskIfPlayerNameIsAvailable`` message.
-    ReponseIfPlayerNameIsAvailable {
-        requested_player_name: String,
-        available: bool,
-    },
     UpdateMovedPlayers(Vec<PlayerMovedUpdate>),
 }

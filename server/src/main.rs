@@ -8,7 +8,6 @@ use shared::{PlayerMessage, PlayerMovedUpdate, PlayerMovement, ServerMessage};
 /// when the client calls the ``PlayerMessage::JoinGame`` function.
 #[derive(Component)]
 struct Player {
-    name: String,
     /// The id given to the client from the ``bevy_quinnet`` library.
     client_id: u64,
 }
@@ -98,13 +97,11 @@ fn handle_player_messages(
                     let _ = endpoint.send_message(client_id, ServerMessage::Pong);
                 }
                 PlayerMessage::JoinGame {
-                    player_name,
                     movement,
                 } => {
-                    println!("Player {} joined the game.", player_name);
+                    println!("Player {} joined the game.", client_id);
                     commands.spawn((
                         Player {
-                            name: player_name,
                             client_id,
                         },
                         Velocity {
@@ -138,7 +135,7 @@ fn handle_player_messages(
                         players.iter_mut()
                     {
                         if player.client_id == client_id {
-                            println!("Player {} left the game.", player.name);
+                            println!("Player {} left the game.", player.client_id);
                             commands.entity(entity).despawn();
                         }
                     }
@@ -170,7 +167,7 @@ fn send_updates_to_players(
         for (player, velocity, translation) in players.iter() {
             if player.client_id != client_id {
                 let update = PlayerMovedUpdate {
-                    player_name: player.name.clone(),
+                    id: player.client_id,
                     movement: PlayerMovement {
                         velocity_x: velocity.x,
                         velocity_y: velocity.y,
@@ -201,7 +198,7 @@ fn remove_inactive_players(
         inactive_timer.0.tick(time.delta());
 
         if inactive_timer.0.finished() {
-            println!("Removed player {} due to inactivity.", player.name);
+            println!("Removed player {} due to inactivity.", player.client_id);
 
             commands.entity(entity).despawn();
             server.endpoint_mut().try_disconnect_client(player.client_id);
