@@ -21,9 +21,7 @@ pub struct PlayerMovedUpdate {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PlayerMessage {
     Ping,
-    JoinGame {
-        movement: PlayerMovement,
-    },
+    JoinGame(PlayerMovement),
     PlayerMoved(PlayerMovement),
     LeaveGame,
 }

@@ -95,9 +95,7 @@ fn handle_player_messages(
                 PlayerMessage::Ping => {
                     let _ = endpoint.send_message(client_id, ServerMessage::Pong);
                 }
-                PlayerMessage::JoinGame {
-                    movement,
-                } => {
+                PlayerMessage::JoinGame(movement) => {
                     println!("Player {} joined the game.", client_id);
                     commands.spawn((
                         Player {

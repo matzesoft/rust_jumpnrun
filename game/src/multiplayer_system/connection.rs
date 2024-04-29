@@ -56,14 +56,12 @@ fn handle_connection_event(
         connection_event.clear();
 
         // TODO: Set Connect function at a better fitting app cycle point!
-        let message = PlayerMessage::JoinGame {
-            movement: PlayerMovement {
-                velocity_x: 0.0,
-                velocity_y: 0.0,
-                translation_x: 0.0,
-                translation_y: 0.0,
-            },
-        };
+        let message = PlayerMessage::JoinGame(PlayerMovement {
+            velocity_x: 0.0,
+            velocity_y: 0.0,
+            translation_x: 0.0,
+            translation_y: 0.0,
+        });
 
         client.connection().try_send_message(message);
     }
@@ -86,7 +84,7 @@ pub fn on_app_exit(app_exit_events: EventReader<AppExit>, client: Res<Client>) {
             .connection()
             .try_send_message(PlayerMessage::LeaveGame);
 
-            println!("Received app exit event");
+        println!("Received app exit event");
         // TODO: event to let the async client send his last messages.
         sleep(Duration::from_secs_f32(10.0));
     }
