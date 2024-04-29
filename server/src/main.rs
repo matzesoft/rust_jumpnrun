@@ -44,7 +44,7 @@ pub fn main() {
         TimePlugin::default(),
     ));
     app.add_plugins(QuinnetServerPlugin::default());
-    app.add_systems(Startup, (start_listening));
+    app.add_systems(Startup, start_listening);
     app.add_systems(
         Update,
         (
@@ -86,7 +86,6 @@ fn handle_player_messages(
         With<Player>,
     >,
     mut server: ResMut<Server>,
-    time: Res<Time>,
 ) {
     let mut endpoint = server.endpoint_mut();
 
@@ -140,9 +139,6 @@ fn handle_player_messages(
                         }
                     }
                 }
-                _ => {
-                    println!("Received unknown Player Message from client {}.", client_id)
-                }
             }
         }
     }
@@ -151,7 +147,7 @@ fn handle_player_messages(
 fn send_updates_to_players(
     time: Res<Time>,
     mut timer: ResMut<UpdateMovedPlayersTimer>,
-    mut server: ResMut<Server>,
+    server: Res<Server>,
     players: Query<(&Player, &Velocity, &Translation), With<Player>>,
 ) {
     timer.tick(time.delta());
@@ -159,7 +155,7 @@ fn send_updates_to_players(
         return;
     };
 
-    let mut endpoint = server.endpoint_mut();
+    let endpoint = server.endpoint();
 
     for client_id in endpoint.clients() {
         let mut players_movements: Vec<PlayerMovedUpdate> = Vec::new();

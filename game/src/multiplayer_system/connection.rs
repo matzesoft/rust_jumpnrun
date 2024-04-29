@@ -30,7 +30,7 @@ pub fn setup_client(app: &mut App) {
             handle_connection_event,
             handle_connection_lost_event,
             handle_server_messages.run_if(is_player_connected),
-            updte_player_movement.run_if(is_player_connected),
+            update_player_movement.run_if(is_player_connected),
             on_app_exit,
         ),
     );
@@ -114,15 +114,11 @@ fn handle_server_messages(mut client: ResMut<Client>) {
                     );
                 }
             }
-
-            _ => {
-                println!("Received unknown server message.");
-            }
         }
     }
 }
 
-pub fn updte_player_movement(
+pub fn update_player_movement(
     client: Res<Client>,
     mut query: Query<(&mut Velocity, &mut GlobalTransform), With<Player>>,
 ) {
