@@ -2,7 +2,7 @@ use bevy::{app::ScheduleRunnerPlugin, log::LogPlugin, prelude::*, time::TimePlug
 use bevy_quinnet::server::{
     certificate::CertificateRetrievalMode, QuinnetServerPlugin, Server, ServerConfiguration,
 };
-use shared::{PlayerMessage, PlayerMovedUpdate, PlayerMovement, ServerMessage};
+use shared::{Highscore, PlayerMessage, PlayerMovedUpdate, PlayerMovement, ServerMessage};
 
 /// Represents a client currently playing the game. This component will be spawned
 /// when the client calls the ``PlayerMessage::JoinGame`` function.
@@ -36,6 +36,10 @@ struct InactiveTimer(Timer);
 #[derive(Resource, Deref, DerefMut)]
 struct UpdateMovedPlayersTimer(Timer);
 
+/// Bevy resource wrapper for the highscore.
+#[derive(Resource, Deref, DerefMut)]
+struct HighscoreResource(Highscore);
+
 pub fn main() {
     let mut app = App::new();
     app.add_plugins((
@@ -57,6 +61,10 @@ pub fn main() {
         1.0,
         TimerMode::Repeating,
     )));
+    app.insert_resource(HighscoreResource(Highscore {
+        player_name: "".to_string(),
+        time_in_seconds: 0, // -> No highscore set yet.
+    }));
     app.run();
 }
 
@@ -86,6 +94,7 @@ fn handle_player_messages(
         With<Player>,
     >,
     mut server: ResMut<Server>,
+    mut highscore: ResMut<HighscoreResource>,
 ) {
     let mut endpoint = server.endpoint_mut();
 
@@ -98,9 +107,7 @@ fn handle_player_messages(
                 PlayerMessage::JoinGame(movement) => {
                     println!("Player {} joined the game.", client_id);
                     commands.spawn((
-                        Player {
-                            client_id,
-                        },
+                        Player { client_id },
                         Velocity {
                             x: movement.velocity_x,
                             y: movement.velocity_y,
@@ -111,6 +118,9 @@ fn handle_player_messages(
                         },
                         InactiveTimer(Timer::from_seconds(10.0, TimerMode::Once)),
                     ));
+
+                    // Sends info about the current highscore to the player
+                    endpoint.try_send_message(client_id, ServerMessage::InformAboutHighscore(highscore.0.clone()));
                 }
                 PlayerMessage::PlayerMoved(movement) => {
                     for (_entity, player, mut velocity, mut translation, mut inactive_timer) in
@@ -125,6 +135,20 @@ fn handle_player_messages(
                             inactive_timer.0.reset();
                             break;
                         }
+                    }
+                }
+                PlayerMessage::RequestPossibleHighscore(possible_highscore) => {
+                    println!(
+                        "New highscore request received: {} seconds from player {}.",
+                        possible_highscore.time_in_seconds, client_id
+                    );
+
+                    if highscore.0.time_in_seconds > possible_highscore.time_in_seconds {
+                        highscore.0 = possible_highscore;
+
+                        endpoint.try_broadcast_message(
+                            ServerMessage::InformAboutHighscore(highscore.0.clone()),
+                        );
                     }
                 }
                 PlayerMessage::LeaveGame => {
@@ -195,7 +219,9 @@ fn remove_inactive_players(
             println!("Removed player {} due to inactivity.", player.client_id);
 
             commands.entity(entity).despawn();
-            server.endpoint_mut().try_disconnect_client(player.client_id);
+            server
+                .endpoint_mut()
+                .try_disconnect_client(player.client_id);
         }
     }
 }

@@ -112,6 +112,16 @@ fn handle_server_messages(mut client: ResMut<Client>) {
                     );
                 }
             }
+            ServerMessage::InformAboutHighscore(highscore) => {
+                if highscore.time_in_seconds == 0 {
+                    println!("No highscore yet. Start playing!");
+                } else {
+                    println!(
+                        "Current highscore: {} seconds from player {}.",
+                        highscore.time_in_seconds, highscore.player_name
+                    );
+                }
+            }
         }
     }
 }
