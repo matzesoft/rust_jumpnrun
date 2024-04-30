@@ -44,7 +44,7 @@ pub fn main() {
     );
 
     app.insert_resource(UpdateMovedPlayersTimer(Timer::from_seconds(
-        1.0,
+        0.02,
         TimerMode::Repeating,
     )));
     app.insert_resource(HighscoreResource(Highscore {
@@ -68,7 +68,7 @@ fn start_listening(mut server: ResMut<Server>) {
 
             let start_endpoint_result = server.start_endpoint(config, cert_mode);
             match start_endpoint_result {
-                Ok(_) => {},
+                Ok(_) => {}
                 Err(error) => println!("Failed to start server endpoint: {}", error),
             }
         }
