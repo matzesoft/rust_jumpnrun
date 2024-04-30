@@ -54,7 +54,7 @@ pub fn main() {
         ),
     );
     app.insert_resource(UpdateMovedPlayersTimer(Timer::from_seconds(
-        1.0,
+        0.02,
         TimerMode::Repeating,
     )));
     app.run();
@@ -95,14 +95,10 @@ fn handle_player_messages(
                 PlayerMessage::Ping => {
                     let _ = endpoint.send_message(client_id, ServerMessage::Pong);
                 }
-                PlayerMessage::JoinGame {
-                    movement,
-                } => {
+                PlayerMessage::JoinGame { movement } => {
                     println!("Player {} joined the game.", client_id);
                     commands.spawn((
-                        Player {
-                            client_id,
-                        },
+                        Player { client_id },
                         Velocity {
                             x: movement.velocity_x,
                             y: movement.velocity_y,
@@ -197,7 +193,9 @@ fn remove_inactive_players(
             println!("Removed player {} due to inactivity.", player.client_id);
 
             commands.entity(entity).despawn();
-            server.endpoint_mut().try_disconnect_client(player.client_id);
+            server
+                .endpoint_mut()
+                .try_disconnect_client(player.client_id);
         }
     }
 }
