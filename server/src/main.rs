@@ -11,6 +11,9 @@ use shared::{Highscore, PlayerMessage, ServerMessage};
 mod highscore_system;
 mod players_system;
 
+static SERVER_IP_ADDR: &'static str = "127.0.0.1";
+static SERVER_PORT: u16 = 6000;
+
 /// Creates the bevy app for the server with all required plugins, events, systems and resources.
 pub fn main() {
     let mut app = App::new();
@@ -54,12 +57,13 @@ pub fn main() {
 
 /// Starts the endpoint of the server via the ``bevy_quinnet`` library.
 fn start_listening(mut server: ResMut<Server>) {
-    let server_config_result = ServerConfiguration::from_string("127.0.0.1:6000");
+    let local_bind_addr_str = format!("{}:{}", SERVER_IP_ADDR, SERVER_PORT);
+    let server_config_result = ServerConfiguration::from_string(&local_bind_addr_str);
 
     match server_config_result {
         Ok(config) => {
             let cert_mode = CertificateRetrievalMode::GenerateSelfSigned {
-                server_hostname: "127.0.0.1".to_string(),
+                server_hostname: SERVER_IP_ADDR.to_string(),
             };
 
             let start_endpoint_result = server.start_endpoint(config, cert_mode);
