@@ -72,6 +72,9 @@ fn handle_player_messages(
     mut ev_player_left: EventWriter<PlayerLeftEvent>,
     mut ev_highscore_request: EventWriter<RequestHighscoreEvent>
 ) {
+    // This mutable is required due to the `endpoint.try_receive_message_from` function call.
+    // Seems like a rust analyer mistake to state that mut is not required.
+    #![allow(unused_mut)]
     let mut endpoint = server.endpoint_mut();
 
     for client_id in endpoint.clients() {
