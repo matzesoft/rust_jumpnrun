@@ -3,11 +3,13 @@ use bevy_quinnet::server::{
     certificate::CertificateRetrievalMode, QuinnetServerPlugin, Server, ServerConfiguration,
 };
 use highscore_system::{HighscoreResource, RequestHighscoreEvent};
-use players_system::{PlayerJoinedEvent, PlayerLeftEvent, PlayerMovedEvent, UpdateMovedPlayersTimer};
+use players_system::{
+    PlayerJoinedEvent, PlayerLeftEvent, PlayerMovedEvent, UpdateMovedPlayersTimer,
+};
 use shared::{Highscore, PlayerMessage, ServerMessage};
 
-mod players_system;
 mod highscore_system;
+mod players_system;
 
 /// Creates the bevy app for the server with all required plugins, events, systems and resources.
 pub fn main() {
@@ -16,7 +18,7 @@ pub fn main() {
         ScheduleRunnerPlugin::default(),
         LogPlugin::default(),
         TimePlugin::default(),
-        QuinnetServerPlugin::default()
+        QuinnetServerPlugin::default(),
     ));
 
     app.add_event::<PlayerJoinedEvent>();
@@ -34,7 +36,7 @@ pub fn main() {
             players_system::on_player_left,
             players_system::send_updates_to_players,
             players_system::remove_inactive_players,
-            highscore_system::on_request_highscore
+            highscore_system::on_request_highscore,
         ),
     );
 
@@ -52,14 +54,22 @@ pub fn main() {
 
 /// Starts the endpoint of the server via the ``bevy_quinnet`` library.
 fn start_listening(mut server: ResMut<Server>) {
-    // TODO: Remove unwraps!
-    let _ = server
-        .start_endpoint(
-            ServerConfiguration::from_string("127.0.0.1:6000").unwrap(),
-            CertificateRetrievalMode::GenerateSelfSigned {
+    let server_config_result = ServerConfiguration::from_string("127.0.0.1:6000");
+
+    match server_config_result {
+        Ok(config) => {
+            let cert_mode = CertificateRetrievalMode::GenerateSelfSigned {
                 server_hostname: "127.0.0.1".to_string(),
-            },
-        );
+            };
+
+            let start_endpoint_result = server.start_endpoint(config, cert_mode);
+            match start_endpoint_result {
+                Ok(_) => {},
+                Err(error) => println!("Failed to start server endpoint: {}", error),
+            }
+        }
+        Err(error) => println!("Failed to parse server adress: {}", error),
+    }
 }
 
 /// Handles all messages sent from the clients to the server. Each messages creates a new event
@@ -70,7 +80,7 @@ fn handle_player_messages(
     mut ev_player_joined: EventWriter<PlayerJoinedEvent>,
     mut ev_player_moved: EventWriter<PlayerMovedEvent>,
     mut ev_player_left: EventWriter<PlayerLeftEvent>,
-    mut ev_highscore_request: EventWriter<RequestHighscoreEvent>
+    mut ev_highscore_request: EventWriter<RequestHighscoreEvent>,
 ) {
     // This mutable is required due to the `endpoint.try_receive_message_from` function call.
     // Seems like a rust analyer mistake to state that mut is not required.
@@ -84,13 +94,22 @@ fn handle_player_messages(
                     let _ = endpoint.send_message(client_id, ServerMessage::Pong);
                 }
                 PlayerMessage::JoinGame(movement) => {
-                    ev_player_joined.send(PlayerJoinedEvent { client_id, movement });
+                    ev_player_joined.send(PlayerJoinedEvent {
+                        client_id,
+                        movement,
+                    });
                 }
                 PlayerMessage::PlayerMoved(movement) => {
-                    ev_player_moved.send(PlayerMovedEvent { client_id, movement });
+                    ev_player_moved.send(PlayerMovedEvent {
+                        client_id,
+                        movement,
+                    });
                 }
                 PlayerMessage::RequestPossibleHighscore(possible_highscore) => {
-                    ev_highscore_request.send(RequestHighscoreEvent { client_id, possible_highscore });
+                    ev_highscore_request.send(RequestHighscoreEvent {
+                        client_id,
+                        possible_highscore,
+                    });
                 }
                 PlayerMessage::LeaveGame => {
                     ev_player_left.send(PlayerLeftEvent { client_id });
