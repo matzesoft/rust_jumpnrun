@@ -17,14 +17,21 @@ pub struct PlayerMovedUpdate {
     pub movement: PlayerMovement,
 }
 
+/// The current best time for the level. If `time_in_seconds` is zero
+/// there is no highscore yet.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Highscore {
+    pub player_name: String,
+    pub time_in_seconds: u64,
+}
+
 /// Messages sent from the player to the server.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum PlayerMessage {
     Ping,
-    JoinGame {
-        movement: PlayerMovement,
-    },
+    JoinGame(PlayerMovement),
     PlayerMoved(PlayerMovement),
+    RequestPossibleHighscore(Highscore),
     LeaveGame,
 }
 
@@ -32,5 +39,6 @@ pub enum PlayerMessage {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ServerMessage {
     Pong,
+    InformAboutHighscore(Highscore),
     UpdateMovedPlayers(Vec<PlayerMovedUpdate>),
 }

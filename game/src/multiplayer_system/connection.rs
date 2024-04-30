@@ -64,14 +64,12 @@ fn handle_connection_event(
         connection_event.clear();
 
         // TODO: Set Connect function at a better fitting app cycle point!
-        let message = PlayerMessage::JoinGame {
-            movement: PlayerMovement {
-                velocity_x: 0.0,
-                velocity_y: 0.0,
-                translation_x: 0.0,
-                translation_y: 0.0,
-            },
-        };
+        let message = PlayerMessage::JoinGame(PlayerMovement {
+            velocity_x: 0.0,
+            velocity_y: 0.0,
+            translation_x: 0.0,
+            translation_y: 0.0,
+        });
 
         client.connection().try_send_message(message);
     }
@@ -205,6 +203,16 @@ fn handle_server_messages(
                             ..Default::default()
                         },
                     });
+                }
+            }
+            ServerMessage::InformAboutHighscore(highscore) => {
+                if highscore.time_in_seconds == 0 {
+                    println!("No highscore yet. Start playing!");
+                } else {
+                    println!(
+                        "Current highscore: {} seconds from player {}.",
+                        highscore.time_in_seconds, highscore.player_name
+                    );
                 }
             }
         }
