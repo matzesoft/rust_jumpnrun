@@ -46,9 +46,10 @@ pub fn setup_client(app: &mut App) {
 fn start_connection(mut client: ResMut<Client>) {
     // TODO: Remove unwrap!
 
+    // -> Use your own ip adress to to connect to the local docker server.
     client
         .open_connection(
-            ConnectionConfiguration::from_strings("127.0.0.1:6000", "0.0.0.0:0").unwrap(),
+            ConnectionConfiguration::from_strings("127.0.0.1:8123", "0.0.0.0:0").unwrap(),
             CertificateVerificationMode::SkipVerification,
         )
         .unwrap();
