@@ -11,8 +11,8 @@ use shared::{Highscore, PlayerMessage, ServerMessage};
 mod highscore_system;
 mod players_system;
 
-static SERVER_IP_ADDR: &'static str = "127.0.0.1";
-static SERVER_PORT: u16 = 6000;
+static SERVER_IP_ADDR: &'static str = "0.0.0.0";
+static SERVER_PORT: u16 = 8123;
 
 /// Creates the bevy app for the server with all required plugins, events, systems and resources.
 pub fn main() {
