@@ -1,8 +1,4 @@
-use crate::asset_system::ghost_physics::GhostColliderBundle;
-use bevy::math::Vec2;
 use bevy::prelude::{Commands, Entity, Transform, *};
-use bevy::sprite::SpriteSheetBundle;
-use bevy::utils::hashbrown::HashMap;
 use bevy::{
     app::{App, AppExit, Startup, Update},
     ecs::{
@@ -13,7 +9,6 @@ use bevy::{
     },
     transform::components::GlobalTransform,
 };
-use bevy_ecs_ldtk::prelude::*;
 use bevy_quinnet::client::{
     certificate::CertificateVerificationMode,
     connection::{ConnectionConfiguration, ConnectionEvent, ConnectionLostEvent},
@@ -24,9 +19,10 @@ use bevy_rapier2d::prelude::*;
 use bevy_rapier2d::dynamics::Velocity;
 use std::{thread::sleep, time::Duration};
 
-use crate::asset_system::players::{GhostPlayer, GhostPlayerBundle, Player};
+use crate::asset_system::players::{GhostPlayer, Player};
 
-use shared::{PlayerMessage, PlayerMovement, ServerMessage};
+use crate::multiplayer_system::ghost_player;
+use shared::{Highscore, PlayerMessage, PlayerMovement, ServerMessage};
 
 pub fn setup_client(app: &mut App) {
     app.add_plugins(QuinnetClientPlugin::default());
@@ -122,101 +118,28 @@ fn handle_server_messages(
         match message {
             ServerMessage::Pong => println!("Received pong 🏓"),
             ServerMessage::UpdateMovedPlayers(players_moved_updates) => {
-                let mut player_id_list: Vec<u64> = Vec::new();
-                let mut player_velocities_server: HashMap<u64, Vec2> = HashMap::new();
-                let mut player_transforms_server: HashMap<u64, Vec2> = HashMap::new();
-                for update in players_moved_updates.iter() {
-                    let movement = &update.movement;
-
-                    player_id_list.push(update.id);
-
-                    player_velocities_server.insert(
-                        update.id,
-                        Vec2::new(movement.velocity_x, movement.velocity_y),
-                    );
-
-                    player_transforms_server.insert(
-                        update.id,
-                        Vec2::new(movement.translation_x, movement.translation_y),
-                    );
-                }
-                println!("Received player updates: {:?}", player_id_list);
-                for (
-                    mut ghost_velocity,
-                    mut ghost_transform,
-                    mut transform,
-                    mut ghostPlayer,
-                    entity,
-                ) in &mut query
-                {
-                    if player_id_list.contains(&ghostPlayer.id) {
-                        println!("Updating player with id: {}", ghostPlayer.id);
-                        let server_velocity =
-                            player_velocities_server.get(&ghostPlayer.id).unwrap();
-                        let server_transform =
-                            player_transforms_server.get(&ghostPlayer.id).unwrap();
-                        ghost_velocity.linvel.x = server_velocity.x;
-                        ghost_velocity.linvel.y = server_velocity.y;
-                        transform.translation =
-                            Vec3::new(server_transform.x, server_transform.y, 0.0);
-
-                        //remove the player from the list
-                        player_id_list.retain(|&x| x != ghostPlayer.id);
-                    } else {
-                        println!("Despawning player with id: {}", ghostPlayer.id);
-                        //remove the player
-                        commands.entity(entity).despawn();
-                        commands.entity(entity).remove::<GhostPlayer>();
-                    }
-                }
-                for id in player_id_list {
-                    //spawn the player
-                    println!("Spawning player with id: {}", id);
-
-                    let texture_handle = asset_server.load("player_sprites/test1.png");
-                    println!("loading test.png");
-                    let texture_atlas = TextureAtlas::from_grid(
-                        texture_handle.clone(),
-                        Vec2::new(16.0, 16.0),
-                        1,
-                        1,
-                        None,
-                        None,
-                    );
-
-                    let texture_atlas_handle = asset_server.add(texture_atlas.clone());
-                    commands.spawn(GhostPlayerBundle {
-                        ghost_player: GhostPlayer { id },
-                        sprite_sheet_bundle: SpriteSheetBundle {
-                            texture_atlas: texture_atlas_handle.clone(),
-                            sprite: TextureAtlasSprite::new(0),
-                            transform: Transform {
-                                translation: Vec3::new(300.0, 300.0, 0.0),
-                                ..Default::default()
-                            },
-                            ..Default::default()
-                        },
-                        ghost_collider_bundle: GhostColliderBundle {
-                            collider: Collider::cuboid(8.0, 8.0),
-                            rigid_body: RigidBody::Dynamic,
-                            friction: Friction::new(0.0),
-                            rotation_constraints: LockedAxes::ROTATION_LOCKED,
-                            ..Default::default()
-                        },
-                    });
-                }
+                ghost_player::moved_players_updated(
+                    &mut query,
+                    &mut commands,
+                    asset_server,
+                    players_moved_updates,
+                );
             }
             ServerMessage::InformAboutHighscore(highscore) => {
-                if highscore.time_in_seconds == 0 {
-                    println!("No highscore yet. Start playing!");
-                } else {
-                    println!(
-                        "Current highscore: {} seconds from player {}.",
-                        highscore.time_in_seconds, highscore.player_name
-                    );
-                }
+                highscore_updated(highscore);
             }
         }
+    }
+}
+
+fn highscore_updated(highscore: Highscore) {
+    if highscore.time_in_seconds == 0 {
+        println!("No highscore yet. Start playing!");
+    } else {
+        println!(
+            "Current highscore: {} seconds from player {}.",
+            highscore.time_in_seconds, highscore.player_name
+        );
     }
 }
 
