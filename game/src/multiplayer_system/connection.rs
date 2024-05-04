@@ -14,7 +14,6 @@ use bevy_quinnet::client::{
     connection::{ConnectionConfiguration, ConnectionEvent, ConnectionLostEvent},
     Client, QuinnetClientPlugin,
 };
-use bevy_rapier2d::prelude::*;
 
 use bevy_rapier2d::dynamics::Velocity;
 use std::{thread::sleep, time::Duration};
@@ -26,6 +25,12 @@ use shared::{Highscore, PlayerMessage, PlayerMovement, ServerMessage};
 
 pub fn setup_client(app: &mut App) {
     app.add_plugins(QuinnetClientPlugin::default());
+    
+    app.insert_resource(UpdatePlayerMovementTimer(Timer::from_seconds(
+        0.02,
+        TimerMode::Repeating,
+    )));
+
     app.add_systems(Startup, start_connection);
     app.add_systems(
         Update,
@@ -45,7 +50,7 @@ fn start_connection(mut client: ResMut<Client>) {
     // -> Use your own ip adress to to connect to the local docker server.
     client
         .open_connection(
-            ConnectionConfiguration::from_strings("127.0.0.1:8123", "0.0.0.0:0").unwrap(),
+            ConnectionConfiguration::from_strings("192.168.188.27:8123", "0.0.0.0:0").unwrap(),
             CertificateVerificationMode::SkipVerification,
         )
         .unwrap();
@@ -143,10 +148,21 @@ fn highscore_updated(highscore: Highscore) {
     }
 }
 
+/// Timer for sending updates to the server about the positon of the player.
+#[derive(Resource, Deref, DerefMut)]
+pub struct UpdatePlayerMovementTimer(pub Timer);
+
 pub fn update_player_movement(
+    time: Res<Time>,
+    mut timer: ResMut<UpdatePlayerMovementTimer>,
     client: Res<Client>,
     mut query: Query<(&mut Velocity, &mut GlobalTransform), With<Player>>,
 ) {
+    timer.tick(time.delta());
+    if !timer.finished() {
+        return;
+    };
+
     for (velocity, transform) in &mut query {
         let movement = PlayerMovement {
             velocity_x: velocity.linvel.x,
