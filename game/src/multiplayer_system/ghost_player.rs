@@ -23,7 +23,7 @@ pub fn moved_players_updated(
         With<GhostPlayer>,
     >,
     commands: &mut Commands,
-    asset_server: Res<AssetServer>,
+    asset_server: &Res<AssetServer>,
     players_moved_updates: Vec<PlayerMovedUpdate>,
 ) {
     let mut player_id_list: Vec<u64> = Vec::new();
@@ -105,15 +105,15 @@ fn despawn_player(commands: &mut Commands, entity: Entity) {
 fn spawn_player(commands: &mut Commands, asset_server: &Res<AssetServer>, id: u64) {
     println!("Spawning player with id: {}", id);
 
-    let texture_handle = asset_server.load("player_sprites/test1.png");
+    let texture_handle = asset_server.load(get_sprite_filename(id));
     println!("loading test.png");
     let texture_atlas = TextureAtlas::from_grid(
         texture_handle.clone(),
         Vec2::new(16.0, 16.0),
-        1,
-        1,
+        29,
+        31,
         None,
-        None,
+        Some(Vec2::new(16.0, 16.0)),
     );
 
     let texture_atlas_handle = asset_server.add(texture_atlas.clone());
@@ -136,4 +136,7 @@ fn spawn_player(commands: &mut Commands, asset_server: &Res<AssetServer>, id: u6
             ..Default::default()
         },
     });
+}
+fn get_sprite_filename(player_id: u64) -> String {
+    format!("player_sprites/Charakter{}.png", (player_id % 19) + 1) //there are 19 different player sprites available
 }

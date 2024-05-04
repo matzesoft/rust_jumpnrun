@@ -121,7 +121,7 @@ fn handle_server_messages(
                 ghost_player::moved_players_updated(
                     &mut query,
                     &mut commands,
-                    asset_server,
+                    &asset_server,
                     players_moved_updates,
                 );
             }
