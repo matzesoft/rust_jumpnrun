@@ -11,8 +11,9 @@ use shared::{Highscore, PlayerMessage, ServerMessage};
 mod highscore_system;
 mod players_system;
 
-static SERVER_IP_ADDR: &'static str = "0.0.0.0";
-static SERVER_PORT: u16 = 8123;
+const SERVER_HOSTNAME: &'static str = "JumpNRun_Server";
+const SERVER_IP_ADDR: &'static str = "0.0.0.0";
+const SERVER_PORT: u16 = 8123;
 
 /// Creates the bevy app for the server with all required plugins, events, systems and resources.
 pub fn main() {
@@ -63,7 +64,7 @@ fn start_listening(mut server: ResMut<Server>) {
     match server_config_result {
         Ok(config) => {
             let cert_mode = CertificateRetrievalMode::GenerateSelfSigned {
-                server_hostname: SERVER_IP_ADDR.to_string(),
+                server_hostname: SERVER_HOSTNAME.to_string(),
             };
 
             let start_endpoint_result = server.start_endpoint(config, cert_mode);
