@@ -23,6 +23,16 @@ use crate::asset_system::players::{GhostPlayer, Player};
 use crate::multiplayer_system::ghost_player;
 use shared::{Highscore, PlayerMessage, PlayerMovement, ServerMessage};
 
+/// The ip adress of the server. Use `127.0.0.1` when running the server locally, otherwise replace it
+/// with the ip of your hosted server.
+const SERVER_IP_ADDR: &'static str = "127.0.0.1";
+
+/// Port the client should connect to on the server.
+const SERVER_PORT: u16 = 8123;
+
+/// Local address and port to bind to. See [`std::net::SocketAddrV4`] for more information.
+const LOCAL_BIND_ADDR: &'static str = "0.0.0.0:0";
+
 pub fn setup_client(app: &mut App) {
     app.add_plugins(QuinnetClientPlugin::default());
     
@@ -47,10 +57,11 @@ pub fn setup_client(app: &mut App) {
 fn start_connection(mut client: ResMut<Client>) {
     // TODO: Remove unwrap!
 
-    // -> Use your own ip adress to to connect to the local docker server.
+    let server_addr_str = format!("{}:{}", SERVER_IP_ADDR, SERVER_PORT);
+
     client
         .open_connection(
-            ConnectionConfiguration::from_strings("192.168.188.27:8123", "0.0.0.0:0").unwrap(),
+            ConnectionConfiguration::from_strings(&server_addr_str, LOCAL_BIND_ADDR).unwrap(),
             CertificateVerificationMode::SkipVerification,
         )
         .unwrap();
