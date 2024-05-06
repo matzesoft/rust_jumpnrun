@@ -116,14 +116,14 @@ fn spawn_player(commands: &mut Commands, asset_server: &Res<AssetServer>, id: u6
         Some(Vec2::new(16.0, 16.0)),
     );
 
-    let texture_atlas_handle = asset_server.add(texture_atlas.clone());
+    let texture_atlas_handle = asset_server.add(texture_atlas);
     commands.spawn(GhostPlayerBundle {
         ghost_player: GhostPlayer { id },
         sprite_sheet_bundle: SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle.clone(),
+            texture_atlas: texture_atlas_handle,
             sprite: TextureAtlasSprite::new(0),
             transform: Transform {
-                translation: Vec3::new(300.0, 300.0, 0.0),
+                translation: Vec3::new(300.0, 300.0, 99999999.0),
                 ..Default::default()
             },
             ..Default::default()

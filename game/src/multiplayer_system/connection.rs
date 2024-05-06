@@ -25,7 +25,7 @@ use shared::{Highscore, PlayerMessage, PlayerMovement, ServerMessage};
 
 /// The ip adress of the server. Use `127.0.0.1` when running the server locally, otherwise replace it
 /// with the ip of your hosted server.
-const SERVER_IP_ADDR: &'static str = "127.0.0.1";
+const SERVER_IP_ADDR: &'static str = "172.20.10.3";
 
 /// Port the client should connect to on the server.
 const SERVER_PORT: u16 = 8123;
@@ -35,7 +35,7 @@ const LOCAL_BIND_ADDR: &'static str = "0.0.0.0:0";
 
 pub fn setup_client(app: &mut App) {
     app.add_plugins(QuinnetClientPlugin::default());
-    
+
     app.insert_resource(UpdatePlayerMovementTimer(Timer::from_seconds(
         0.02,
         TimerMode::Repeating,

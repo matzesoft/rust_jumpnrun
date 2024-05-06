@@ -32,7 +32,7 @@ fn main() {
     });
     app.insert_resource(LevelSelection::index(0));
     app.insert_resource(LdtkSettings {
-        set_clear_color: SetClearColor::FromLevelBackground,
+        level_background: LevelBackground::Nonexistent,
         ..Default::default()
     });
     app.add_systems(
