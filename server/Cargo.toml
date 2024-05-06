@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 bevy = { version = "0.12.1", default-features = false }
-serde = "1.0.198"
+serde = { version = "1.0.198", features = ["derive"] }
 bevy_quinnet = "0.6"
 shared = { path = "../shared" }
