@@ -1,3 +1,7 @@
 .DS_Store
 /target
 /.idea
+
+game/target
+server/target
+shared/target

@@ -1,13 +1,13 @@
-use std::{thread::sleep, time::Duration};
-
+use bevy::prelude::{Commands, Entity, Transform, *};
 use bevy::{
-    app::{App, AppExit, Startup, Update},
+    app::{App, Startup, Update},
     ecs::{
         event::EventReader,
         query::With,
         schedule::IntoSystemConfigs,
         system::{Query, Res, ResMut},
     },
+    transform::components::GlobalTransform,
 };
 use bevy_quinnet::client::{
     certificate::CertificateVerificationMode,
@@ -15,13 +15,31 @@ use bevy_quinnet::client::{
     Client, QuinnetClientPlugin,
 };
 
-use crate::asset_system::players::Player;
-use crate::input_system::input_handler::InputHandler;
+use bevy_rapier2d::dynamics::Velocity;
 
-use shared::{PlayerMessage, ServerMessage};
+use crate::asset_system::players::{GhostPlayer, Player};
+
+use crate::multiplayer_system::ghost_player;
+use shared::{Highscore, PlayerMessage, PlayerMovement, ServerMessage};
+
+/// The ip adress of the server. Use `127.0.0.1` when running the server locally, otherwise replace it
+/// with the ip of your hosted server.
+const SERVER_IP_ADDR: &'static str = "127.0.0.1";
+
+/// Port the client should connect to on the server.
+const SERVER_PORT: u16 = 8123;
+
+/// Local address and port to bind to. See [`std::net::SocketAddrV4`] for more information.
+const LOCAL_BIND_ADDR: &'static str = "0.0.0.0:0";
 
 pub fn setup_client(app: &mut App) {
     app.add_plugins(QuinnetClientPlugin::default());
+
+    app.insert_resource(UpdatePlayerMovementTimer(Timer::from_seconds(
+        0.02,
+        TimerMode::Repeating,
+    )));
+
     app.add_systems(Startup, start_connection);
     app.add_systems(
         Update,
@@ -29,8 +47,7 @@ pub fn setup_client(app: &mut App) {
             handle_connection_event,
             handle_connection_lost_event,
             handle_server_messages.run_if(is_player_connected),
-            player_moved,
-            on_app_exit,
+            update_player_movement.run_if(is_player_connected),
         ),
     );
 }
@@ -38,18 +55,34 @@ pub fn setup_client(app: &mut App) {
 fn start_connection(mut client: ResMut<Client>) {
     // TODO: Remove unwrap!
 
+    let server_addr_str = format!("{}:{}", SERVER_IP_ADDR, SERVER_PORT);
+
     client
         .open_connection(
-            ConnectionConfiguration::from_strings("127.0.0.1:6000", "0.0.0.0:0").unwrap(),
+            ConnectionConfiguration::from_strings(&server_addr_str, LOCAL_BIND_ADDR).unwrap(),
             CertificateVerificationMode::SkipVerification,
         )
         .unwrap();
+    println!("Connecting to server...");
 }
 
-fn handle_connection_event(mut connection_event: EventReader<ConnectionEvent>) {
+fn handle_connection_event(
+    client: Res<Client>,
+    mut connection_event: EventReader<ConnectionEvent>,
+) {
     if !connection_event.is_empty() {
         println!("Player connected to server :)");
         connection_event.clear();
+
+        // TODO: Set Connect function at a better fitting app cycle point!
+        let message = PlayerMessage::JoinGame(PlayerMovement {
+            velocity_x: 0.0,
+            velocity_y: 0.0,
+            translation_x: 0.0,
+            translation_y: 0.0,
+        });
+
+        client.connection().try_send_message(message);
     }
 }
 
@@ -64,33 +97,79 @@ fn handle_connection_lost_event(mut connection_lost_event: EventReader<Connectio
     }
 }
 
-pub fn on_app_exit(app_exit_events: EventReader<AppExit>, client: Res<Client>) {
-    if !app_exit_events.is_empty() {
-        client
-            .connection()
-            .send_message(PlayerMessage::Disconnect {})
-            .unwrap();
-
-        // TODO: event to let the async client send his last messages.
-        sleep(Duration::from_secs_f32(0.1));
-    }
-}
-
-fn handle_server_messages(mut client: ResMut<Client>) {
+fn handle_server_messages(
+    mut client: ResMut<Client>,
+    mut query: Query<
+        (
+            &mut Velocity,
+            &mut GlobalTransform,
+            &mut Transform,
+            &GhostPlayer,
+            Entity,
+        ),
+        With<GhostPlayer>,
+    >,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+) {
     while let Some(message) = client
         .connection_mut()
         .try_receive_message::<ServerMessage>()
     {
         match message {
             ServerMessage::Pong => println!("Received pong 🏓"),
+            ServerMessage::UpdateMovedPlayers(players_moved_updates) => {
+                ghost_player::moved_players_updated(
+                    &mut query,
+                    &mut commands,
+                    &asset_server,
+                    players_moved_updates,
+                );
+            }
+            ServerMessage::InformAboutHighscore(highscore) => {
+                highscore_updated(highscore);
+            }
         }
     }
 }
 
-pub fn player_moved(mut client: ResMut<Client>, mut query: Query<&mut InputHandler, With<Player>>) {
-    for mut input_handler in &mut query {
-        if input_handler.walking != 0.0 {
-            client.connection().try_send_message(PlayerMessage::PlayerWalked { direction: input_handler.walking });
-        }
+fn highscore_updated(highscore: Highscore) {
+    if highscore.time_in_seconds == 0 {
+        println!("No highscore yet. Start playing!");
+    } else {
+        println!(
+            "Current highscore: {} seconds from player {}.",
+            highscore.time_in_seconds, highscore.player_name
+        );
+    }
+}
+
+/// Timer for sending updates to the server about the positon of the player.
+#[derive(Resource, Deref, DerefMut)]
+pub struct UpdatePlayerMovementTimer(pub Timer);
+
+pub fn update_player_movement(
+    time: Res<Time>,
+    mut timer: ResMut<UpdatePlayerMovementTimer>,
+    client: Res<Client>,
+    mut query: Query<(&mut Velocity, &mut GlobalTransform), With<Player>>,
+) {
+    timer.tick(time.delta());
+    if !timer.finished() {
+        return;
+    };
+
+    for (velocity, transform) in &mut query {
+        let movement = PlayerMovement {
+            velocity_x: velocity.linvel.x,
+            velocity_y: velocity.linvel.y,
+            translation_x: transform.translation().x,
+            translation_y: transform.translation().y,
+        };
+
+        client
+            .connection()
+            .try_send_message(PlayerMessage::PlayerMoved(movement));
     }
 }

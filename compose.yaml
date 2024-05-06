@@ -1,0 +1,8 @@
+services:
+  server:
+    container_name: server
+    build:
+      context: .
+      target: final
+    ports:
+      - "8123:8123/udp"
