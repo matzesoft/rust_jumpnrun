@@ -1,6 +1,7 @@
 use crate::asset_system::ghost_physics::GhostColliderBundle;
 use crate::asset_system::players::{GhostPlayer, GhostPlayerBundle};
 use bevy::asset::AssetServer;
+use bevy::ecs::event::{Event, EventReader};
 use bevy::math::{Vec2, Vec3};
 use bevy::prelude::{
     Commands, Entity, GlobalTransform, Mut, Query, Res, SpriteSheetBundle, TextureAtlas,
@@ -11,8 +12,13 @@ use bevy_rapier2d::dynamics::{LockedAxes, RigidBody, Velocity};
 use bevy_rapier2d::geometry::{Collider, Friction};
 use shared::PlayerMovedUpdate;
 
+/// Bevy event to be fired when server sends info about positions of ghost players.
+#[derive(Event)]
+pub struct GhostPlayersMovedEvent(pub Vec<PlayerMovedUpdate>);
+
 pub fn moved_players_updated(
-    query: &mut Query<
+    mut events: EventReader<GhostPlayersMovedEvent>,
+    mut query: Query<
         (
             &mut Velocity,
             &mut GlobalTransform,
@@ -22,40 +28,45 @@ pub fn moved_players_updated(
         ),
         With<GhostPlayer>,
     >,
-    commands: &mut Commands,
-    asset_server: &Res<AssetServer>,
-    players_moved_updates: Vec<PlayerMovedUpdate>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
 ) {
-    let mut player_id_list: Vec<u64> = Vec::new();
-    let mut player_velocities_server: HashMap<u64, Vec2> = HashMap::new();
-    let mut player_transforms_server: HashMap<u64, Vec2> = HashMap::new();
-    get_player_id_list(
-        players_moved_updates,
-        &mut player_id_list,
-        &mut player_velocities_server,
-        &mut player_transforms_server,
-    );
-    println!("Received player updates: {:?}", player_id_list);
-    for (mut ghost_velocity, mut ghost_transform, mut transform, mut ghostPlayer, entity) in query {
-        if player_id_list.contains(&ghostPlayer.id) {
-            move_player(
-                &mut player_id_list,
-                &mut player_velocities_server,
-                &mut player_transforms_server,
-                &mut ghost_velocity,
-                &mut transform,
-                &mut ghostPlayer,
-            );
-        } else {
-            println!("Despawning player with id: {}", ghostPlayer.id);
-            //remove the player
-            despawn_player(commands, entity);
-        }
-    }
-    for id in player_id_list {
-        //spawn the player
+    for ev in events.read() {
+        let players_moved_updates = ev.0.to_owned();
 
-        spawn_player(commands, &asset_server, id);
+        let mut player_id_list: Vec<u64> = Vec::new();
+        let mut player_velocities_server: HashMap<u64, Vec2> = HashMap::new();
+        let mut player_transforms_server: HashMap<u64, Vec2> = HashMap::new();
+        get_player_id_list(
+            players_moved_updates,
+            &mut player_id_list,
+            &mut player_velocities_server,
+            &mut player_transforms_server,
+        );
+        println!("Received player updates: {:?}", player_id_list);
+        for (mut ghost_velocity, mut ghost_transform, mut transform, mut ghostPlayer, entity) in
+            &mut query
+        {
+            if player_id_list.contains(&ghostPlayer.id) {
+                move_player(
+                    &mut player_id_list,
+                    &mut player_velocities_server,
+                    &mut player_transforms_server,
+                    &mut ghost_velocity,
+                    &mut transform,
+                    &mut ghostPlayer,
+                );
+            } else {
+                println!("Despawning player with id: {}", ghostPlayer.id);
+                //remove the player
+                despawn_player(&mut commands, entity);
+            }
+        }
+        for id in player_id_list {
+            //spawn the player
+
+            spawn_player(&mut commands, &asset_server, id);
+        }
     }
 }
 
