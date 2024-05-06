@@ -17,9 +17,12 @@ use bevy_quinnet::client::{
 
 use bevy_rapier2d::dynamics::Velocity;
 
-use crate::asset_system::players::{GhostPlayer, Player};
+use crate::asset_system::players::GhostPlayer;
 
 use crate::multiplayer_system::ghost_player;
+use crate::multiplayer_system::highscore;
+use crate::multiplayer_system::player_movement;
+use crate::multiplayer_system::highscore::HighscoreInfoEvent;
 use shared::{Highscore, PlayerMessage, PlayerMovement, ServerMessage};
 
 /// The ip adress of the server. Use `127.0.0.1` when running the server locally, otherwise replace it
@@ -32,13 +35,19 @@ const SERVER_PORT: u16 = 8123;
 /// Local address and port to bind to. See [`std::net::SocketAddrV4`] for more information.
 const LOCAL_BIND_ADDR: &'static str = "0.0.0.0:0";
 
+/// Adds all necessary plugins, resources and systems to the app to use multiplayer functionality.
 pub fn setup_client(app: &mut App) {
     app.add_plugins(QuinnetClientPlugin::default());
 
-    app.insert_resource(UpdatePlayerMovementTimer(Timer::from_seconds(
-        0.02,
-        TimerMode::Repeating,
-    )));
+    app.add_event::<HighscoreInfoEvent>();
+
+    app.insert_resource(player_movement::UpdatePlayerMovementTimer(
+        Timer::from_seconds(0.02, TimerMode::Repeating),
+    ));
+    app.insert_resource(highscore::HighscoreResource(Highscore {
+        player_name: "".to_string(),
+        time_in_seconds: 0, // 0 means -> No highscore set yet.
+    }));
 
     app.add_systems(Startup, start_connection);
     app.add_systems(
@@ -47,34 +56,45 @@ pub fn setup_client(app: &mut App) {
             handle_connection_event,
             handle_connection_lost_event,
             handle_server_messages.run_if(is_player_connected),
-            update_player_movement.run_if(is_player_connected),
+            player_movement::update_player_movement.run_if(is_player_connected),
+            highscore::highscore_updated,
         ),
     );
 }
 
+/// Opens the connection to the server with the [SERVER_IP_ADDR] and [SERVER_PORT] using the `bevy_quinnet` library.
 fn start_connection(mut client: ResMut<Client>) {
-    // TODO: Remove unwrap!
-
     let server_addr_str = format!("{}:{}", SERVER_IP_ADDR, SERVER_PORT);
+    let connection_config_result =
+        ConnectionConfiguration::from_strings(&server_addr_str, LOCAL_BIND_ADDR);
 
-    client
-        .open_connection(
-            ConnectionConfiguration::from_strings(&server_addr_str, LOCAL_BIND_ADDR).unwrap(),
-            CertificateVerificationMode::SkipVerification,
-        )
-        .unwrap();
-    println!("Connecting to server...");
+    match connection_config_result {
+        Ok(connection_config) => {
+            let open_connection_result = client.open_connection(
+                connection_config,
+                CertificateVerificationMode::SkipVerification,
+            );
+
+            match open_connection_result {
+                Ok(_) => {}
+                Err(error) => println!("Error opening connection to server: {}", error),
+            }
+        }
+        Err(error) => println!("Error creating connection configuration: {}", error),
+    }
 }
 
+/// Called when the player connects to the server.
+///
+/// This event does **not** mean the player already joined the game. It just means that the connection
+/// to the server was successful. To join the game the player has to send a [PlayerMessage::JoinGame] message.
 fn handle_connection_event(
     client: Res<Client>,
     mut connection_event: EventReader<ConnectionEvent>,
 ) {
     if !connection_event.is_empty() {
-        println!("Player connected to server :)");
         connection_event.clear();
 
-        // TODO: Set Connect function at a better fitting app cycle point!
         let message = PlayerMessage::JoinGame(PlayerMovement {
             velocity_x: 0.0,
             velocity_y: 0.0,
@@ -90,13 +110,19 @@ fn is_player_connected(client: Res<Client>) -> bool {
     client.connection().is_connected()
 }
 
+/// Called when the player loses the connection to the server.
 fn handle_connection_lost_event(mut connection_lost_event: EventReader<ConnectionLostEvent>) {
     if !connection_lost_event.is_empty() {
-        println!("Player lost connection to server :(");
         connection_lost_event.clear();
+        // TODO: Despawn ghost players using this event
     }
 }
 
+/// Handles all messages sent from the server to the client. Check [shared::ServerMessage] for all possible messages.
+///
+/// Messages received are then handled by the responsible system:
+/// * [ServerMessage::UpdateMovedPlayers] - Handled by [`ghost_player::moved_players_updated`]
+/// * [ServerMessage::InformAboutHighscore] - Handled by [`highscore::highscore_updated`]
 fn handle_server_messages(
     mut client: ResMut<Client>,
     mut query: Query<
@@ -111,7 +137,8 @@ fn handle_server_messages(
     >,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+
+    mut ev_highscore_info: EventWriter<HighscoreInfoEvent>,
 ) {
     while let Some(message) = client
         .connection_mut()
@@ -127,49 +154,9 @@ fn handle_server_messages(
                     players_moved_updates,
                 );
             }
-            ServerMessage::InformAboutHighscore(highscore) => {
-                highscore_updated(highscore);
+            ServerMessage::InformAboutHighscore(new_highscore) => {
+                ev_highscore_info.send(HighscoreInfoEvent(new_highscore));
             }
         }
-    }
-}
-
-fn highscore_updated(highscore: Highscore) {
-    if highscore.time_in_seconds == 0 {
-        println!("No highscore yet. Start playing!");
-    } else {
-        println!(
-            "Current highscore: {} seconds from player {}.",
-            highscore.time_in_seconds, highscore.player_name
-        );
-    }
-}
-
-/// Timer for sending updates to the server about the positon of the player.
-#[derive(Resource, Deref, DerefMut)]
-pub struct UpdatePlayerMovementTimer(pub Timer);
-
-pub fn update_player_movement(
-    time: Res<Time>,
-    mut timer: ResMut<UpdatePlayerMovementTimer>,
-    client: Res<Client>,
-    mut query: Query<(&mut Velocity, &mut GlobalTransform), With<Player>>,
-) {
-    timer.tick(time.delta());
-    if !timer.finished() {
-        return;
-    };
-
-    for (velocity, transform) in &mut query {
-        let movement = PlayerMovement {
-            velocity_x: velocity.linvel.x,
-            velocity_y: velocity.linvel.y,
-            translation_x: transform.translation().x,
-            translation_y: transform.translation().y,
-        };
-
-        client
-            .connection()
-            .try_send_message(PlayerMessage::PlayerMoved(movement));
     }
 }
