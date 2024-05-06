@@ -1,13 +1,11 @@
-use bevy::prelude::{Commands, Entity, Transform, *};
 use bevy::{
     app::{App, Startup, Update},
     ecs::{
-        event::EventReader,
-        query::With,
+        event::{EventReader, EventWriter},
         schedule::IntoSystemConfigs,
-        system::{Query, Res, ResMut},
-    },
-    transform::components::GlobalTransform,
+        system::{Res, ResMut},
+    }, time::{Timer, TimerMode},
+    
 };
 use bevy_quinnet::client::{
     certificate::CertificateVerificationMode,
@@ -15,11 +13,8 @@ use bevy_quinnet::client::{
     Client, QuinnetClientPlugin,
 };
 
-use bevy_rapier2d::dynamics::Velocity;
-
-use crate::asset_system::players::GhostPlayer;
-
 use crate::multiplayer_system::ghost_player;
+use crate::multiplayer_system::ghost_player::GhostPlayersMovedEvent;
 use crate::multiplayer_system::highscore;
 use crate::multiplayer_system::player_movement;
 use crate::multiplayer_system::highscore::HighscoreInfoEvent;
@@ -40,6 +35,7 @@ pub fn setup_client(app: &mut App) {
     app.add_plugins(QuinnetClientPlugin::default());
 
     app.add_event::<HighscoreInfoEvent>();
+    app.add_event::<GhostPlayersMovedEvent>();
 
     app.insert_resource(player_movement::UpdatePlayerMovementTimer(
         Timer::from_seconds(0.02, TimerMode::Repeating),
@@ -57,6 +53,7 @@ pub fn setup_client(app: &mut App) {
             handle_connection_lost_event,
             handle_server_messages.run_if(is_player_connected),
             player_movement::update_player_movement.run_if(is_player_connected),
+            ghost_player::moved_players_updated,
             highscore::highscore_updated,
         ),
     );
@@ -125,19 +122,8 @@ fn handle_connection_lost_event(mut connection_lost_event: EventReader<Connectio
 /// * [ServerMessage::InformAboutHighscore] - Handled by [`highscore::highscore_updated`]
 fn handle_server_messages(
     mut client: ResMut<Client>,
-    mut query: Query<
-        (
-            &mut Velocity,
-            &mut GlobalTransform,
-            &mut Transform,
-            &GhostPlayer,
-            Entity,
-        ),
-        With<GhostPlayer>,
-    >,
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
 
+    mut ev_ghost_players_moved: EventWriter<GhostPlayersMovedEvent>,
     mut ev_highscore_info: EventWriter<HighscoreInfoEvent>,
 ) {
     while let Some(message) = client
@@ -147,12 +133,7 @@ fn handle_server_messages(
         match message {
             ServerMessage::Pong => println!("Received pong 🏓"),
             ServerMessage::UpdateMovedPlayers(players_moved_updates) => {
-                ghost_player::moved_players_updated(
-                    &mut query,
-                    &mut commands,
-                    &asset_server,
-                    players_moved_updates,
-                );
+                ev_ghost_players_moved.send(GhostPlayersMovedEvent(players_moved_updates));
             }
             ServerMessage::InformAboutHighscore(new_highscore) => {
                 ev_highscore_info.send(HighscoreInfoEvent(new_highscore));
