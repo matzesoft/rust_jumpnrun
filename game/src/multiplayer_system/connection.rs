@@ -1,6 +1,6 @@
 use bevy::prelude::{Commands, Entity, Transform, *};
 use bevy::{
-    app::{App, AppExit, Startup, Update},
+    app::{App, Startup, Update},
     ecs::{
         event::EventReader,
         query::With,
@@ -16,7 +16,6 @@ use bevy_quinnet::client::{
 };
 
 use bevy_rapier2d::dynamics::Velocity;
-use std::{thread::sleep, time::Duration};
 
 use crate::asset_system::players::{GhostPlayer, Player};
 
@@ -49,7 +48,6 @@ pub fn setup_client(app: &mut App) {
             handle_connection_lost_event,
             handle_server_messages.run_if(is_player_connected),
             update_player_movement.run_if(is_player_connected),
-            on_app_exit,
         ),
     );
 }
@@ -96,18 +94,6 @@ fn handle_connection_lost_event(mut connection_lost_event: EventReader<Connectio
     if !connection_lost_event.is_empty() {
         println!("Player lost connection to server :(");
         connection_lost_event.clear();
-    }
-}
-
-pub fn on_app_exit(app_exit_events: EventReader<AppExit>, client: Res<Client>) {
-    if !app_exit_events.is_empty() {
-        client
-            .connection()
-            .try_send_message(PlayerMessage::LeaveGame);
-
-        println!("Received app exit event");
-        // TODO: event to let the async client send his last messages.
-        sleep(Duration::from_secs_f32(10.0));
     }
 }
 
