@@ -18,7 +18,7 @@ docker compose up --build
 ```
 This will build the the docker container and start the game server. You should now see `rust_jumpnrun` in docker desktop or using `docker ps`.
 
-#### 2. Start the game
+#### 2. Run the game
 You first have to switch to the game directoy inside of the project. Then you can run the game:
 ``` bash
 cd game
