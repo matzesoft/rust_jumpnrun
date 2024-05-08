@@ -207,3 +207,52 @@ pub fn remove_inactive_players(
         }
     }
 }
+
+//
+// ------> Tests <------ //
+//
+#[test]
+fn test_player_join() {
+    use bevy_quinnet::server::QuinnetServerPlugin;
+    use bevy_quinnet::client::{
+        certificate::CertificateVerificationMode,
+        connection::{ConnectionConfiguration, ConnectionEvent, ConnectionLostEvent},
+        Client, QuinnetClientPlugin,
+    };
+    use crate::start_listening;
+
+    // Init the app and server
+    let mut app = App::new();
+    app.add_plugins(QuinnetServerPlugin::default());
+    app.add_plugins(QuinnetClientPlugin::default());
+    app.add_systems(Update, start_listening);
+    app.update();
+
+
+    client.open_connection(
+        ConnectionConfiguration::from_strings("127.0.0.1:8123", "0.0.0.0:0"),
+        CertificateVerificationMode::SkipVerification,
+    );    
+
+    // Add the systems
+    app.add_systems(Update, on_player_joined);
+    app.update();
+
+    let player_joined_event = PlayerJoinedEvent {
+        client_id: 1,
+        movement: PlayerMovement {
+            velocity_x: 0.0,
+            velocity_y: 0.0,
+            translation_x: 0.0,
+            translation_y: 0.0,
+        },
+    };
+
+    app.world.insert_resource(player_joined_event);
+
+    app.update();
+
+    let clients = endpoint.clients();
+    assert_eq!(clients.len(), 1);
+    assert_eq!(clients[0], 1);
+}
