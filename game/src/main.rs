@@ -40,6 +40,7 @@ fn main() {
         (
             asset_system::assets_loading::setup,
             score_system::time::setup,
+            score_system::highscore_label::setup,
         ),
     );
 
@@ -55,6 +56,7 @@ fn main() {
             asset_system::ground::ground_detection,
             asset_system::ground::update_on_ground,
             score_system::time::change_time_text,
+            score_system::highscore_label::update_highscore,
         ),
     );
     app.register_ldtk_entity::<asset_system::players::PlayerBundle>("Player");

@@ -1,4 +1,4 @@
 pub mod connection;
 mod ghost_player;
-mod highscore;
+pub mod highscore;
 mod player_movement;
