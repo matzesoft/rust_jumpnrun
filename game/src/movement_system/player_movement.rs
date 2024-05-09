@@ -2,7 +2,7 @@ use crate::asset_system::players::*;
 use crate::input_system::input_handler::InputHandler;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
-use crate::asset_system::ground::GroundDetection;
+use crate::asset_system::walls::GroundDetection;
 
 ///Defines the speed of the player
 const PLAYER_SPEED: f32 = 100.0;
