@@ -3,6 +3,7 @@ use crate::asset_system::ghost_physics::GhostColliderBundle;
 use crate::asset_system::walls::GroundDetection;
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
+use crate::asset_system::finish_lines::FinishLine_Detection;
 use crate::asset_system::traps::TrapDetection;
 
 use crate::input_system;
@@ -20,6 +21,7 @@ pub struct PlayerBundle {
     pub collider_bundle: ColliderBundle,
     pub ground_detection: GroundDetection,
     pub trap_detection: TrapDetection,
+    pub finishline_detection: FinishLineDetection,
     pub input_handler: input_system::input_handler::InputHandler,
 }
 

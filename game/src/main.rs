@@ -59,6 +59,10 @@ fn main() {
             asset_system::traps::spawn_trap_sensor,
             asset_system::traps::trap_detection,
             asset_system::traps::update_on_trap,
+            asset_system::finish_lines::spawn_finishline_collision,
+            asset_system::finish_lines::spawn_finishline_sensor,
+            asset_system::finish_lines::finishline_detection,
+            asset_system::finish_lines::update_on_finishline,
             score_system::time::change_time_text,
             score_system::highscore_label::update_highscore,
         ),
@@ -66,6 +70,7 @@ fn main() {
     app.register_ldtk_entity::<asset_system::players::PlayerBundle>("Player");
     app.register_ldtk_int_cell_for_layer::<asset_system::walls::WallBundle>("Map_IntGrid",1);
     app.register_ldtk_int_cell_for_layer::<asset_system::traps::TrapBundle>("Traps_IntGrid", 1);
+    app.register_ldtk_int_cell_for_layer::<asset_system::finish_lines::FinishLineBundle>("Finish_Line_IntGrid", 1);
 
     multiplayer_system::connection::setup_client(&mut app);
 
