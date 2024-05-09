@@ -72,6 +72,8 @@ fn main() {
     app.register_ldtk_int_cell_for_layer::<asset_system::traps::TrapBundle>("Traps_IntGrid", 1);
     app.register_ldtk_int_cell_for_layer::<asset_system::finish_lines::FinishLineBundle>("Finish_Line_IntGrid", 1);
 
+    app.add_event::<asset_system::finish_lines::FinishLineEvent>();
+
     multiplayer_system::connection::setup_client(&mut app);
 
     app.run();

@@ -244,9 +244,13 @@ pub fn finishline_detection(
     }
 }
 
+#[derive(Event, Default)]
+pub struct FinishLineEvent;
+
 pub fn update_on_finishline(
     mut finishline_detectors: Query<&mut FinishLineDetection>,
     finishline_sensors: Query<&FinishLineSensor, Changed<FinishLineSensor>>,
+    mut finishline_events: EventWriter<FinishLineEvent>,
     mut transforms: Query<&mut Transform>,
 ) {
     for sensor in &finishline_sensors {
@@ -254,6 +258,7 @@ pub fn update_on_finishline(
             finishline_detection.on_finishline = !sensor.intersecting_finishline_entities.is_empty();
             if finishline_detection.on_finishline {
                 if let Ok(mut transform) = transforms.get_mut(sensor.finishline_detection_entity) {
+                    finishline_events.send_default();
                     // Set the new position for the entity
                     transform.translation = Vec2::new(40., 40.).extend(0.0);
                 }
