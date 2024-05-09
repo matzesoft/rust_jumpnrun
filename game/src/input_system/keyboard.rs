@@ -1,4 +1,4 @@
-use crate::asset_system::ground::GroundDetection;
+use crate::asset_system::walls::GroundDetection;
 use crate::asset_system::players::Player;
 use crate::input_system::input_handler::InputHandler;
 use bevy::prelude::*;

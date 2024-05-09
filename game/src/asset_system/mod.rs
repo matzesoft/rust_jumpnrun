@@ -2,6 +2,6 @@
 pub mod assets_loading;
 pub mod collision;
 pub mod ghost_physics;
-pub mod ground;
 pub mod players;
 pub mod walls;
+pub mod traps;
