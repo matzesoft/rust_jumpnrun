@@ -180,7 +180,7 @@ pub struct FinishLineSensor {
 
 pub fn spawn_finishline_sensor(
     mut commands: Commands,
-    detect_finishline_for: Query<(Entity, &Collider), Added<FinishLine_Detection>>,
+    detect_finishline_for: Query<(Entity, &Collider), Added<FinishLineDetection>>,
 ) {
     for (entity, shape) in &detect_finishline_for {
         if let Some(cuboid) = shape.as_cuboid() {
@@ -201,7 +201,7 @@ pub fn spawn_finishline_sensor(
                     .insert(Sensor)
                     .insert(Transform::from_translation(sensor_translation))
                     .insert(GlobalTransform::default())
-                    .insert(FinishLine_Sensor {
+                    .insert(FinishLineSensor {
                         finishline_detection_entity: entity,
                         intersecting_finishline_entities: HashSet::new(),
                     });
@@ -211,7 +211,7 @@ pub fn spawn_finishline_sensor(
 }
 
 pub fn finishline_detection(
-    mut finishline_sensors: Query<&mut FinishLine_Sensor>,
+    mut finishline_sensors: Query<&mut FinishLineSensor>,
     mut collisions: EventReader<CollisionEvent>,
     collidables: Query<Entity, (With<Collider>, Without<Sensor>)>,
     finishlines: Query<Entity, With<FinishLine>>
@@ -245,8 +245,8 @@ pub fn finishline_detection(
 }
 
 pub fn update_on_finishline(
-    mut finishline_detectors: Query<&mut FinishLine_Detection>,
-    finishline_sensors: Query<&FinishLine_Sensor, Changed<FinishLine_Sensor>>,
+    mut finishline_detectors: Query<&mut FinishLineDetection>,
+    finishline_sensors: Query<&FinishLineSensor, Changed<FinishLineSensor>>,
     mut transforms: Query<&mut Transform>,
 ) {
     for sensor in &finishline_sensors {

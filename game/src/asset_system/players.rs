@@ -3,7 +3,7 @@ use crate::asset_system::ghost_physics::GhostColliderBundle;
 use crate::asset_system::walls::GroundDetection;
 use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
-use crate::asset_system::finish_lines::FinishLine_Detection;
+use crate::asset_system::finish_lines::FinishLineDetection;
 use crate::asset_system::traps::TrapDetection;
 
 use crate::input_system;
