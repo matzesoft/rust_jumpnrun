@@ -2,10 +2,6 @@ use bevy::prelude::*;
 use bevy_ecs_ldtk::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-use std::collections::{HashMap, HashSet};
-
-use crate::asset_system::walls::Wall;
-
 #[derive(Clone, Default, Bundle, LdtkIntCell)]
 pub struct ColliderBundle {
     pub collider: Collider,
