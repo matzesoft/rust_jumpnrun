@@ -1,7 +1,5 @@
-use crate::score_system::time::TimeText;
 use bevy::asset::AssetServer;
 use bevy::prelude::*;
-use shared::Highscore;
 
 #[derive(Component)]
 pub struct HighscoreText {

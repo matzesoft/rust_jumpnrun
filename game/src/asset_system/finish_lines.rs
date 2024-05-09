@@ -4,6 +4,7 @@ use bevy_ecs_ldtk::prelude::*;
 use bevy_rapier2d::dynamics::RigidBody;
 use bevy_rapier2d::geometry::{ActiveEvents, Collider, Friction, Sensor};
 use bevy_rapier2d::pipeline::CollisionEvent;
+use crate::score_system::time::TimeText;
 
 #[derive(Default, Component)]
 pub struct FinishLine;
@@ -244,22 +245,26 @@ pub fn finishline_detection(
     }
 }
 
-#[derive(Event, Default)]
-pub struct FinishLineEvent;
+#[derive(Event)]
+pub struct FinishLineEvent{
+    pub elapsed_time: u64,
+}
 
 pub fn update_on_finishline(
     mut finishline_detectors: Query<&mut FinishLineDetection>,
     finishline_sensors: Query<&FinishLineSensor, Changed<FinishLineSensor>>,
     mut finishline_events: EventWriter<FinishLineEvent>,
     mut transforms: Query<&mut Transform>,
+    mut time_text: Query<&mut TimeText, With<TimeText>>,
 ) {
     for sensor in &finishline_sensors {
         if let Ok(mut finishline_detection) = finishline_detectors.get_mut(sensor.finishline_detection_entity) {
             finishline_detection.on_finishline = !sensor.intersecting_finishline_entities.is_empty();
             if finishline_detection.on_finishline {
                 if let Ok(mut transform) = transforms.get_mut(sensor.finishline_detection_entity) {
-                    finishline_events.send_default();
-                    // Set the new position for the entity
+                    let time_text = time_text.single_mut();
+                    let elapsed_time = time_text.time.elapsed().as_secs();
+                    finishline_events.send(FinishLineEvent{elapsed_time});
                     transform.translation = Vec2::new(40., 40.).extend(0.0);
                 }
             }
