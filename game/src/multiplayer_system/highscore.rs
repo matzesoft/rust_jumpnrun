@@ -29,10 +29,7 @@ pub fn new_highscore_info_from_server(
             println!("No highscore yet. Start playing!");
         } else {
             current_highscore.0 = ev.0.to_owned();
-            println!(
-                "Current highscore: {} seconds from player {}.",
-                current_highscore.time_in_seconds, current_highscore.player_name
-            );
+            println!("Current highscore: {}", current_highscore.time_in_seconds);
         }
     }
 }
@@ -42,7 +39,6 @@ pub fn new_highscore_info_from_server(
 pub fn on_player_finish_level(mut events: EventReader<FinishLineEvent>, client: Res<Client>) {
     for ev in events.read() {
         let highscore = Highscore {
-            player_name: "player_name_deprecated".to_string(),
             time_in_seconds: ev.elapsed_time,
         };
         client

@@ -21,7 +21,6 @@ pub struct PlayerMovedUpdate {
 /// there is no highscore yet.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Highscore {
-    pub player_name: String,
     pub time_in_seconds: u64,
 }
 

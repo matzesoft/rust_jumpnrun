@@ -4,8 +4,8 @@ use bevy::{
         event::{EventReader, EventWriter},
         schedule::IntoSystemConfigs,
         system::{Res, ResMut},
-    }, time::{Timer, TimerMode},
-    
+    },
+    time::{Timer, TimerMode},
 };
 use bevy_quinnet::client::{
     certificate::CertificateVerificationMode,
@@ -16,8 +16,8 @@ use bevy_quinnet::client::{
 use crate::multiplayer_system::ghost_player;
 use crate::multiplayer_system::ghost_player::GhostPlayersMovedEvent;
 use crate::multiplayer_system::highscore;
-use crate::multiplayer_system::player_movement;
 use crate::multiplayer_system::highscore::HighscoreInfoEvent;
+use crate::multiplayer_system::player_movement;
 use shared::{Highscore, PlayerMessage, PlayerMovement, ServerMessage};
 
 /// The ip adress of the server. Use `127.0.0.1` when running the server locally, otherwise replace it
@@ -41,7 +41,6 @@ pub fn setup_client(app: &mut App) {
         Timer::from_seconds(0.02, TimerMode::Repeating),
     ));
     app.insert_resource(highscore::HighscoreResource(Highscore {
-        player_name: "".to_string(),
         time_in_seconds: 0, // 0 means -> No highscore set yet.
     }));
 
