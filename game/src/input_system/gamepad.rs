@@ -2,13 +2,11 @@
 use super::player;
 use super::sprite;*/
 
-use super::input_handler;
-use crate::asset_system::ground::GroundDetection;
+use crate::asset_system::walls::GroundDetection;
 use crate::asset_system::players::Player;
 use crate::input_system::input_handler::InputHandler;
 use bevy::input::gamepad::*;
 use bevy::prelude::*;
-use bevy_rapier2d::dynamics::Velocity;
 
 #[derive(Resource)]
 pub struct MyGamepad(pub Gamepad);
