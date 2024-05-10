@@ -43,7 +43,6 @@ pub fn moved_players_updated(
             &mut player_velocities_server,
             &mut player_transforms_server,
         );
-        println!("Received player updates: {:?}", player_id_list);
         for (mut ghost_velocity, mut ghost_transform, mut transform, mut ghostPlayer, entity) in
             &mut query
         {

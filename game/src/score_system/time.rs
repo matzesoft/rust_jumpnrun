@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::text::*;
 use bevy::time::Stopwatch;
 
 #[derive(Component)]

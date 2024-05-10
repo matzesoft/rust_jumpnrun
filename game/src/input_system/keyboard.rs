@@ -16,7 +16,7 @@ pub fn keyboard_input(
     mut player: Query<(&mut InputHandler, &GroundDetection), With<Player>>,
 ) {
     let (mut handler, ground_detection) =
-        if let Ok((mut p_handler, p_ground_detection)) = player.get_single_mut() {
+        if let Ok((p_handler, p_ground_detection)) = player.get_single_mut() {
             (p_handler, p_ground_detection)
         } else {
             return;

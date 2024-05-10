@@ -1,6 +1,5 @@
 use bevy::prelude::Bundle;
-use bevy_ecs_ldtk::LdtkIntCell;
-use bevy_rapier2d::dynamics::{GravityScale, LockedAxes, RigidBody, Velocity};
+use bevy_rapier2d::dynamics::{LockedAxes, RigidBody, Velocity};
 use bevy_rapier2d::geometry::{Collider, ColliderMassProperties, Friction};
 
 #[derive(Clone, Default, Bundle)]

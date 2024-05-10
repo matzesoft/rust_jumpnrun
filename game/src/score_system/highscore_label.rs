@@ -1,7 +1,7 @@
-use crate::score_system::time::TimeText;
 use bevy::asset::AssetServer;
 use bevy::prelude::*;
-use shared::Highscore;
+
+use crate::multiplayer_system::highscore::HighscoreInfoEvent;
 
 #[derive(Component)]
 pub struct HighscoreText {
@@ -14,7 +14,7 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         // Create a TextBundle that has a Text with a single section.
         TextBundle::from_section(
             // Accepts a `String` or any type that converts into a `String`, such as `&str`
-            "Highscore: 0",
+            "No highscore yet!",
             TextStyle {
                 // This font is loaded and will be used instead of the default font.
                 font: asset_server.load("fonts/Pixelfont.ttf"),
@@ -33,13 +33,17 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         HighscoreText { value: 0 },
     ));
 }
+
 pub fn update_highscore(
+    mut events: EventReader<HighscoreInfoEvent>,
     mut query: Query<(&mut Text, &mut HighscoreText), With<HighscoreText>>,
-    mut current_highscore: ResMut<crate::multiplayer_system::highscore::HighscoreResource>,
 ) {
-    let (mut text, mut highscore_text) = query.single_mut();
-    if current_highscore.0.time_in_seconds < highscore_text.value {
-        highscore_text.value = current_highscore.0.time_in_seconds;
-        text.sections[0].value = format!("Highscore: {}", highscore_text.value);
+    for ev in events.read() {
+        let (mut text, mut highscore_text) = query.single_mut();
+
+        if ev.0.time_in_seconds != 0 {
+            highscore_text.value = ev.0.time_in_seconds;
+            text.sections[0].value = format!("Highscore: {}", highscore_text.value);
+        }
     }
 }

@@ -5,3 +5,4 @@ pub mod ghost_physics;
 pub mod players;
 pub mod walls;
 pub mod traps;
+pub mod finish_lines;

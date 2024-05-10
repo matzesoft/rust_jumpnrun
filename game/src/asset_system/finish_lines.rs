@@ -7,30 +7,30 @@ use bevy_rapier2d::pipeline::CollisionEvent;
 use crate::score_system::time::TimeText;
 
 #[derive(Default, Component)]
-pub struct Trap;
+pub struct FinishLine;
 
 #[derive(Default, Bundle, LdtkIntCell)]
-pub struct TrapBundle {
-    trap: Trap,
+pub struct FinishLineBundle {
+    finishline: FinishLine,
 }
 
-pub fn spawn_trap_collision(
+pub fn spawn_finishline_collision(
     mut commands: Commands,
-    trap_query: Query<(&GridCoords, &Parent), Added<Trap>>,
-    parent_query: Query<&Parent, Without<Trap>>,
+    finishline_query: Query<(&GridCoords, &Parent), Added<FinishLine>>,
+    parent_query: Query<&Parent, Without<FinishLine>>,
     level_query: Query<(Entity, &LevelIid)>,
     ldtk_projects: Query<&Handle<LdtkProject>>,
     ldtk_project_assets: Res<Assets<LdtkProject>>,
 ) {
-    /// Represents a wide trap that is 1 tile tall
-    /// Used to spawn trap collisions
+    /// Represents a wide finishline that is 1 tile tall
+    /// Used to spawn finishline collisions
     #[derive(Clone, Eq, PartialEq, Debug, Default, Hash)]
     struct Plate {
         left: i32,
         right: i32,
     }
 
-    /// A simple rectangle type representing a trap of any size
+    /// A simple rectangle type representing a finishline of any size
     struct Rect {
         left: i32,
         right: i32,
@@ -38,30 +38,30 @@ pub fn spawn_trap_collision(
         bottom: i32,
     }
 
-    // Consider where the traps are
+    // Consider where the finishlines are
     // storing them as GridCoords in a HashSet for quick, easy lookup
     //
-    // The key of this map will be the entity of the level the trap belongs to.
+    // The key of this map will be the entity of the level the finishline belongs to.
     // This has two consequences in the resulting collision entities:
-    // 1. it forces the traps to be split along level boundaries
+    // 1. it forces the finishlines to be split along level boundaries
     // 2. it lets us easily add the collision entities as children of the appropriate level entity
-    let mut level_to_trap_locations: HashMap<Entity, HashSet<GridCoords>> = HashMap::new();
+    let mut level_to_finishline_locations: HashMap<Entity, HashSet<GridCoords>> = HashMap::new();
 
-    trap_query.iter().for_each(|(&grid_coords, parent)| {
+    finishline_query.iter().for_each(|(&grid_coords, parent)| {
         // An intgrid tile's direct parent will be a layer entity, not the level entity
         // To get the level entity, you need the tile's grandparent.
         // This is where parent_query comes in.
         if let Ok(grandparent) = parent_query.get(parent.get()) {
-            level_to_trap_locations
+            level_to_finishline_locations
                 .entry(grandparent.get())
                 .or_default()
                 .insert(grid_coords);
         }
     });
 
-    if !trap_query.is_empty() {
+    if !finishline_query.is_empty() {
         level_query.iter().for_each(|(level_entity, level_iid)| {
-            if let Some(level_traps) = level_to_trap_locations.get(&level_entity) {
+            if let Some(level_finishlines) = level_to_finishline_locations.get(&level_entity) {
                 let ldtk_project = ldtk_project_assets
                     .get(ldtk_projects.single())
                     .expect("Project should be loaded if level has spawned");
@@ -78,7 +78,7 @@ pub fn spawn_trap_collision(
                     ..
                 } = level.layer_instances()[0];
 
-                // combine trap tiles into flat "plates" in each individual row
+                // combine finishline tiles into flat "plates" in each individual row
                 let mut plate_stack: Vec<Vec<Plate>> = Vec::new();
 
                 for y in 0..height {
@@ -87,7 +87,7 @@ pub fn spawn_trap_collision(
 
                     // + 1 to the width so the algorithm "terminates" plates that touch the right edge
                     for x in 0..width + 1 {
-                        match (plate_start, level_traps.contains(&GridCoords { x, y })) {
+                        match (plate_start, level_finishlines.contains(&GridCoords { x, y })) {
                             (Some(s), false) => {
                                 row_plates.push(Plate {
                                     left: s,
@@ -106,7 +106,7 @@ pub fn spawn_trap_collision(
                 // combine "plates" into rectangles across multiple rows
                 let mut rect_builder: HashMap<Plate, Rect> = HashMap::new();
                 let mut prev_row: Vec<Plate> = Vec::new();
-                let mut trap_rects: Vec<Rect> = Vec::new();
+                let mut finishline_rects: Vec<Rect> = Vec::new();
 
                 // an extra empty row so the algorithm "finishes" the rects that touch the top edge
                 plate_stack.push(Vec::new());
@@ -116,7 +116,7 @@ pub fn spawn_trap_collision(
                         if !current_row.contains(prev_plate) {
                             // remove the finished rect so that the same plate in the future starts a new rect
                             if let Some(rect) = rect_builder.remove(prev_plate) {
-                                trap_rects.push(rect);
+                                finishline_rects.push(rect);
                             }
                         }
                     }
@@ -139,29 +139,28 @@ pub fn spawn_trap_collision(
                     // Making the collider a child of the level serves two purposes:
                     // 1. Adjusts the transforms to be relative to the level for free
                     // 2. the colliders will be despawned automatically when levels unload
-                    for trap_rect in trap_rects {
+                    for finishline_rect in finishline_rects {
                         level
                             .spawn_empty()
                             .insert(Collider::cuboid(
-                                (trap_rect.right as f32 - trap_rect.left as f32 + 1.)
+                                (finishline_rect.right as f32 - finishline_rect.left as f32 + 1.)
                                     * grid_size as f32
                                     / 2.,
-                                (trap_rect.top as f32 - trap_rect.bottom as f32 + 1.)
+                                (finishline_rect.top as f32 - finishline_rect.bottom as f32 + 1.)
                                     * grid_size as f32
-                                    / 4.,
+                                    / 2.,
                             ))
                             .insert(RigidBody::Fixed)
                             .insert(Friction::new(1.0))
                             .insert(Transform::from_xyz(
-                                (trap_rect.left + trap_rect.right + 1) as f32 * grid_size as f32
+                                (finishline_rect.left + finishline_rect.right + 1) as f32 * grid_size as f32
                                     / 2.,
-                                (trap_rect.bottom + trap_rect.top + 1) as f32 * grid_size as f32
-                                    / 2.
-                                    - grid_size as f32 / 4.,
+                                (finishline_rect.bottom + finishline_rect.top + 1) as f32 * grid_size as f32
+                                    / 2.,
                                 0.,
                             ))
                             .insert(GlobalTransform::default())
-                            .insert(Trap);
+                            .insert(FinishLine);
                     }
                 });
             }
@@ -170,30 +169,30 @@ pub fn spawn_trap_collision(
 }
 
 #[derive(Clone, Default, Component)]
-pub struct TrapDetection {
-    pub on_trap: bool,
+pub struct FinishLineDetection {
+    pub on_finishline: bool,
 }
 
 #[derive(Component)]
-pub struct TrapSensor {
-    pub trap_detection_entity: Entity,
-    pub intersecting_trap_entities: HashSet<Entity>,
+pub struct FinishLineSensor {
+    pub finishline_detection_entity: Entity,
+    pub intersecting_finishline_entities: HashSet<Entity>,
 }
 
-pub fn spawn_trap_sensor(
+pub fn spawn_finishline_sensor(
     mut commands: Commands,
-    detect_trap_for: Query<(Entity, &Collider), Added<TrapDetection>>,
+    detect_finishline_for: Query<(Entity, &Collider), Added<FinishLineDetection>>,
 ) {
-    for (entity, shape) in &detect_trap_for {
+    for (entity, shape) in &detect_finishline_for {
         if let Some(cuboid) = shape.as_cuboid() {
             let Vec2 {
                 x: half_extents_x,
                 y: half_extents_y,
             } = cuboid.half_extents();
 
-            let detector_shape = Collider::cuboid(half_extents_x  * 0.95, 2.);
+            let detector_shape = Collider::cuboid(half_extents_x  * 1.05, half_extents_y * 1.05);
 
-            let sensor_translation = Vec3::new(0., -half_extents_y, 0.);
+            let sensor_translation = Vec3::new(0., 0., 0.);
 
             commands.entity(entity).with_children(|builder| {
                 builder
@@ -203,42 +202,42 @@ pub fn spawn_trap_sensor(
                     .insert(Sensor)
                     .insert(Transform::from_translation(sensor_translation))
                     .insert(GlobalTransform::default())
-                    .insert(TrapSensor {
-                        trap_detection_entity: entity,
-                        intersecting_trap_entities: HashSet::new(),
+                    .insert(FinishLineSensor {
+                        finishline_detection_entity: entity,
+                        intersecting_finishline_entities: HashSet::new(),
                     });
             });
         }
     }
 }
 
-pub fn trap_detection(
-    mut trap_sensors: Query<&mut TrapSensor>,
+pub fn finishline_detection(
+    mut finishline_sensors: Query<&mut FinishLineSensor>,
     mut collisions: EventReader<CollisionEvent>,
     collidables: Query<Entity, (With<Collider>, Without<Sensor>)>,
-    traps: Query<Entity, With<Trap>>
+    finishlines: Query<Entity, With<FinishLine>>
 ) {
     for collision_event in collisions.read() {
         match collision_event {
             CollisionEvent::Started(e1, e2, _) => {
-                if collidables.contains(*e1) && traps.contains(*e1) {
-                    if let Ok(mut sensor) = trap_sensors.get_mut(*e2) {
-                        sensor.intersecting_trap_entities.insert(*e1);
+                if collidables.contains(*e1) && finishlines.contains(*e1) {
+                    if let Ok(mut sensor) = finishline_sensors.get_mut(*e2) {
+                        sensor.intersecting_finishline_entities.insert(*e1);
                     }
-                } else if collidables.contains(*e2) && traps.contains(*e2) {
-                    if let Ok(mut sensor) = trap_sensors.get_mut(*e1) {
-                        sensor.intersecting_trap_entities.insert(*e2);
+                } else if collidables.contains(*e2) && finishlines.contains(*e2) {
+                    if let Ok(mut sensor) = finishline_sensors.get_mut(*e1) {
+                        sensor.intersecting_finishline_entities.insert(*e2);
                     }
                 }
             }
             CollisionEvent::Stopped(e1, e2, _) => {
-                if collidables.contains(*e1) && traps.contains(*e1) {
-                    if let Ok(mut sensor) = trap_sensors.get_mut(*e2) {
-                        sensor.intersecting_trap_entities.remove(e1);
+                if collidables.contains(*e1) && finishlines.contains(*e1) {
+                    if let Ok(mut sensor) = finishline_sensors.get_mut(*e2) {
+                        sensor.intersecting_finishline_entities.remove(e1);
                     }
-                } else if collidables.contains(*e2) && traps.contains(*e2) {
-                    if let Ok(mut sensor) = trap_sensors.get_mut(*e1) {
-                        sensor.intersecting_trap_entities.remove(e2);
+                } else if collidables.contains(*e2) && finishlines.contains(*e2) {
+                    if let Ok(mut sensor) = finishline_sensors.get_mut(*e1) {
+                        sensor.intersecting_finishline_entities.remove(e2);
                     }
                 }
             }
@@ -246,20 +245,27 @@ pub fn trap_detection(
     }
 }
 
-pub fn update_on_trap(
-    mut trap_detectors: Query<&mut TrapDetection>,
-    trap_sensors: Query<&TrapSensor, Changed<TrapSensor>>,
+#[derive(Event)]
+pub struct FinishLineEvent{
+    pub elapsed_time: u64,
+}
+
+pub fn update_on_finishline(
+    mut finishline_detectors: Query<&mut FinishLineDetection>,
+    finishline_sensors: Query<&FinishLineSensor, Changed<FinishLineSensor>>,
+    mut finishline_events: EventWriter<FinishLineEvent>,
     mut transforms: Query<&mut Transform>,
     mut time_text: Query<&mut TimeText, With<TimeText>>,
 ) {
-    for sensor in &trap_sensors {
-        if let Ok(mut trap_detection) = trap_detectors.get_mut(sensor.trap_detection_entity) {
-            trap_detection.on_trap = !sensor.intersecting_trap_entities.is_empty();
-            if trap_detection.on_trap {
-                if let Ok(mut transform) = transforms.get_mut(sensor.trap_detection_entity) {
-                    // Set the new position for the entity
-                    transform.translation = Vec2::new(40., 40.).extend(0.0);
+    for sensor in &finishline_sensors {
+        if let Ok(mut finishline_detection) = finishline_detectors.get_mut(sensor.finishline_detection_entity) {
+            finishline_detection.on_finishline = !sensor.intersecting_finishline_entities.is_empty();
+            if finishline_detection.on_finishline {
+                if let Ok(mut transform) = transforms.get_mut(sensor.finishline_detection_entity) {
                     let mut time_text = time_text.single_mut();
+                    let elapsed_time = time_text.time.elapsed().as_secs();
+                    finishline_events.send(FinishLineEvent{elapsed_time});
+                    transform.translation = Vec2::new(40., 40.).extend(0.0);
                     time_text.time.reset();
                 }
             }
