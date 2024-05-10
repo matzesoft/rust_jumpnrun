@@ -262,10 +262,11 @@ pub fn update_on_finishline(
             finishline_detection.on_finishline = !sensor.intersecting_finishline_entities.is_empty();
             if finishline_detection.on_finishline {
                 if let Ok(mut transform) = transforms.get_mut(sensor.finishline_detection_entity) {
-                    let time_text = time_text.single_mut();
+                    let mut time_text = time_text.single_mut();
                     let elapsed_time = time_text.time.elapsed().as_secs();
                     finishline_events.send(FinishLineEvent{elapsed_time});
                     transform.translation = Vec2::new(40., 40.).extend(0.0);
+                    time_text.time.reset();
                 }
             }
         }
