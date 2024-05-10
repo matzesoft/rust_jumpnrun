@@ -108,7 +108,7 @@ fn move_player(
     player_id_list.retain(|&x| x != ghost_player.id);
 }
 
-fn despawn_player(commands: &mut Commands, entity: Entity) {
+pub fn despawn_player(commands: &mut Commands, entity: Entity) {
     commands.entity(entity).despawn();
     commands.entity(entity).remove::<GhostPlayer>();
 }

@@ -61,6 +61,7 @@ fn main() {
             asset_system::traps::update_on_trap,
             score_system::time::change_time_text,
             score_system::highscore_label::update_highscore,
+            movement_system::camera_movement::camera_movement,
         ),
     );
     app.register_ldtk_entity::<asset_system::players::PlayerBundle>("Player");
