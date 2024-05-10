@@ -1,23 +1,25 @@
+use bevy::prelude::{Commands, Entity, GlobalTransform, Query, Transform, With};
 use bevy::{
     app::{App, Startup, Update},
     ecs::{
         event::{EventReader, EventWriter},
         schedule::IntoSystemConfigs,
         system::{Res, ResMut},
-    }, time::{Timer, TimerMode},
-    
+    },
+    time::{Timer, TimerMode},
 };
 use bevy_quinnet::client::{
     certificate::CertificateVerificationMode,
     connection::{ConnectionConfiguration, ConnectionEvent, ConnectionLostEvent},
     Client, QuinnetClientPlugin,
 };
+use bevy_rapier2d::dynamics::Velocity;
 
 use crate::multiplayer_system::ghost_player;
 use crate::multiplayer_system::ghost_player::GhostPlayersMovedEvent;
 use crate::multiplayer_system::highscore;
-use crate::multiplayer_system::player_movement;
 use crate::multiplayer_system::highscore::HighscoreInfoEvent;
+use crate::multiplayer_system::player_movement;
 use shared::{Highscore, PlayerMessage, PlayerMovement, ServerMessage};
 
 /// The ip adress of the server. Use `127.0.0.1` when running the server locally, otherwise replace it
@@ -108,10 +110,16 @@ fn is_player_connected(client: Res<Client>) -> bool {
 }
 
 /// Called when the player loses the connection to the server.
-fn handle_connection_lost_event(mut connection_lost_event: EventReader<ConnectionLostEvent>) {
+fn handle_connection_lost_event(
+    mut connection_lost_event: EventReader<ConnectionLostEvent>,
+    mut query: Query<Entity, With<crate::asset_system::players::GhostPlayer>>,
+    mut commands: Commands,
+) {
     if !connection_lost_event.is_empty() {
         connection_lost_event.clear();
-        // TODO: Despawn ghost players using this event
+        for entity in query.iter_mut() {
+            ghost_player::despawn_player(&mut commands, entity);
+        }
     }
 }
 

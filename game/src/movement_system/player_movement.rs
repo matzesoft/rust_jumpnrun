@@ -1,8 +1,8 @@
+use crate::asset_system::ground::GroundDetection;
 use crate::asset_system::players::*;
 use crate::input_system::input_handler::InputHandler;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
-use crate::asset_system::ground::GroundDetection;
 
 ///Defines the speed of the player
 const PLAYER_SPEED: f32 = 100.0;
@@ -12,10 +12,13 @@ const PLAYER_SPEED: f32 = 100.0;
 /// # Arguments
 /// * `query` - Query that fetches the velocity and input handler of the player, gets provided when called as a system
 
-pub fn player_movement(mut query: Query<(&mut Velocity, &mut InputHandler, &GroundDetection), With<Player>>) {
+pub fn player_movement(
+    mut query: Query<(&mut Velocity, &mut InputHandler, &GroundDetection), With<Player>>,
+) {
     for (mut velocity, mut input_handler, ground_detection) in &mut query {
         //implements walking
-            velocity.linvel.x = PLAYER_SPEED * input_handler.walking;
+        velocity.linvel.x = PLAYER_SPEED * input_handler.walking;
+
         //implements jumping
         if input_handler.jumping && ground_detection.on_ground {
             velocity.linvel.y = 300.0;
