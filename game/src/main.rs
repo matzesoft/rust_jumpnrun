@@ -26,6 +26,9 @@ fn main() {
         RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0),
         RapierDebugRenderPlugin::default(),
     ));
+
+    multiplayer_system::connection::setup_client(&mut app);
+
     app.insert_resource(RapierConfiguration {
         gravity: Vec2::new(0.0, -9.81 * 50.0),
         ..Default::default()
@@ -73,8 +76,6 @@ fn main() {
     app.register_ldtk_int_cell_for_layer::<asset_system::finish_lines::FinishLineBundle>("Finish_Line_IntGrid", 1);
 
     app.add_event::<asset_system::finish_lines::FinishLineEvent>();
-
-    multiplayer_system::connection::setup_client(&mut app);
 
     app.run();
 }

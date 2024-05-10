@@ -40,9 +40,6 @@ pub fn setup_client(app: &mut App) {
     app.insert_resource(player_movement::UpdatePlayerMovementTimer(
         Timer::from_seconds(0.02, TimerMode::Repeating),
     ));
-    app.insert_resource(highscore::HighscoreResource(Highscore {
-        time_in_seconds: 0, // 0 means -> No highscore set yet.
-    }));
 
     app.add_systems(Startup, start_connection);
     app.add_systems(
@@ -53,7 +50,6 @@ pub fn setup_client(app: &mut App) {
             handle_server_messages.run_if(is_player_connected),
             player_movement::update_player_movement.run_if(is_player_connected),
             ghost_player::moved_players_updated,
-            highscore::new_highscore_info_from_server,
             highscore::on_player_finish_level.run_if(is_player_connected),
         ),
     );
