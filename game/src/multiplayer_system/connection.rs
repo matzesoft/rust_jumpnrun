@@ -54,7 +54,8 @@ pub fn setup_client(app: &mut App) {
             handle_server_messages.run_if(is_player_connected),
             player_movement::update_player_movement.run_if(is_player_connected),
             ghost_player::moved_players_updated,
-            highscore::highscore_updated,
+            highscore::new_highscore_info_from_server,
+            highscore::on_player_finish_level.run_if(is_player_connected),
         ),
     );
 }
