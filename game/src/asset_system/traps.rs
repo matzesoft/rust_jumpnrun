@@ -4,6 +4,7 @@ use bevy_ecs_ldtk::prelude::*;
 use bevy_rapier2d::dynamics::RigidBody;
 use bevy_rapier2d::geometry::{ActiveEvents, Collider, Friction, Sensor};
 use bevy_rapier2d::pipeline::CollisionEvent;
+use crate::score_system::time::TimeText;
 
 #[derive(Default, Component)]
 pub struct Trap;
@@ -249,6 +250,7 @@ pub fn update_on_trap(
     mut trap_detectors: Query<&mut TrapDetection>,
     trap_sensors: Query<&TrapSensor, Changed<TrapSensor>>,
     mut transforms: Query<&mut Transform>,
+    mut time_text: Query<&mut TimeText, With<TimeText>>,
 ) {
     for sensor in &trap_sensors {
         if let Ok(mut trap_detection) = trap_detectors.get_mut(sensor.trap_detection_entity) {
@@ -257,6 +259,8 @@ pub fn update_on_trap(
                 if let Ok(mut transform) = transforms.get_mut(sensor.trap_detection_entity) {
                     // Set the new position for the entity
                     transform.translation = Vec2::new(40., 40.).extend(0.0);
+                    let mut time_text = time_text.single_mut();
+                    time_text.time.reset();
                 }
             }
         }
