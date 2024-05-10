@@ -96,7 +96,6 @@ fn move_player(
     transform: &mut Mut<Transform>,
     mut ghost_player: &mut &GhostPlayer,
 ) {
-    println!("Updating player with id: {}", ghost_player.id);
     let server_velocity = player_velocities_server.get(&ghost_player.id).unwrap();
     let server_transform = player_transforms_server.get(&ghost_player.id).unwrap();
     ghost_velocity.linvel.x = server_velocity.x;
