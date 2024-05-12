@@ -24,7 +24,6 @@ fn main() {
     app.add_plugins((
         LdtkPlugin,
         RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.0),
-        RapierDebugRenderPlugin::default(),
     ));
 
     multiplayer_system::connection::setup_client(&mut app);
