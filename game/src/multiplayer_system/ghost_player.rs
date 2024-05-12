@@ -139,7 +139,7 @@ fn spawn_player(commands: &mut Commands, asset_server: &Res<AssetServer>, id: u6
             ..Default::default()
         },
         ghost_collider_bundle: GhostColliderBundle {
-            collider: Collider::cuboid(8.0, 8.0),
+            collider: Collider::cuboid(6.5, 8.0),
             rigid_body: RigidBody::Dynamic,
             friction: Friction::new(0.0),
             rotation_constraints: LockedAxes::ROTATION_LOCKED,
