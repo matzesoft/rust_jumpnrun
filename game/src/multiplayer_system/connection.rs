@@ -24,7 +24,7 @@ use shared::{Highscore, PlayerMessage, PlayerMovement, ServerMessage};
 
 /// The ip adress of the server. Use `127.0.0.1` when running the server locally, otherwise replace it
 /// with the ip of your hosted server.
-const SERVER_IP_ADDR: &'static str = "192.168.1.88";
+const SERVER_IP_ADDR: &'static str = "192.168.2.1";
 
 /// Port the client should connect to on the server.
 const SERVER_PORT: u16 = 8123;
