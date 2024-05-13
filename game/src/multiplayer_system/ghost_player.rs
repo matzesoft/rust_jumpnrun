@@ -43,7 +43,7 @@ pub fn moved_players_updated(
             &mut player_velocities_server,
             &mut player_transforms_server,
         );
-        for (mut ghost_velocity, mut ghost_transform, mut transform, mut ghostPlayer, entity) in
+        for (mut ghost_velocity, _ghost_transform, mut transform, mut ghostPlayer, entity) in
             &mut query
         {
             if player_id_list.contains(&ghostPlayer.id) {
@@ -94,7 +94,7 @@ fn move_player(
     player_transforms_server: &mut HashMap<u64, Vec2>,
     ghost_velocity: &mut Mut<Velocity>,
     transform: &mut Mut<Transform>,
-    mut ghost_player: &mut &GhostPlayer,
+    ghost_player: &mut &GhostPlayer,
 ) {
     let server_velocity = player_velocities_server.get(&ghost_player.id).unwrap();
     let server_transform = player_transforms_server.get(&ghost_player.id).unwrap();

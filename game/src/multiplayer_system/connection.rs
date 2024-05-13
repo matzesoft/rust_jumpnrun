@@ -1,4 +1,4 @@
-use bevy::prelude::{Commands, Entity, GlobalTransform, Query, Transform, With};
+use bevy::prelude::{Commands, Entity, Query, With};
 use bevy::{
     app::{App, Startup, Update},
     ecs::{
@@ -13,14 +13,14 @@ use bevy_quinnet::client::{
     connection::{ConnectionConfiguration, ConnectionEvent, ConnectionLostEvent},
     Client, QuinnetClientPlugin,
 };
-use bevy_rapier2d::dynamics::Velocity;
+
 
 use crate::multiplayer_system::ghost_player;
 use crate::multiplayer_system::ghost_player::GhostPlayersMovedEvent;
 use crate::multiplayer_system::highscore;
 use crate::multiplayer_system::highscore::HighscoreInfoEvent;
 use crate::multiplayer_system::player_movement;
-use shared::{Highscore, PlayerMessage, PlayerMovement, ServerMessage};
+use shared::{PlayerMessage, PlayerMovement, ServerMessage};
 
 /// The ip adress of the server. Use `127.0.0.1` when running the server locally, otherwise replace it
 /// with the ip of your hosted server.
