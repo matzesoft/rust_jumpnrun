@@ -2,6 +2,8 @@
 This is a multiplayer Jump 'n' Run game build using Rust and the [Bevy GameEngine](https://bevyengine.org).
 The repo contains of the game aswell as the server managing the multiplayer.
 
+![multiplayer.png](./screenshots/Multiplayer.png)
+
 ## Run the project locally
 
 Requirements:
