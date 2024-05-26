@@ -49,7 +49,6 @@ pub fn main() {
         TimerMode::Repeating,
     )));
     app.insert_resource(HighscoreResource(Highscore {
-        player_name: "".to_string(),
         time_in_seconds: 0, // 0 means -> No highscore set yet.
     }));
 

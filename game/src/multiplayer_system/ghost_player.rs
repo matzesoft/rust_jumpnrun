@@ -43,8 +43,7 @@ pub fn moved_players_updated(
             &mut player_velocities_server,
             &mut player_transforms_server,
         );
-        println!("Received player updates: {:?}", player_id_list);
-        for (mut ghost_velocity, mut ghost_transform, mut transform, mut ghostPlayer, entity) in
+        for (mut ghost_velocity, _ghost_transform, mut transform, mut ghostPlayer, entity) in
             &mut query
         {
             if player_id_list.contains(&ghostPlayer.id) {
@@ -95,9 +94,8 @@ fn move_player(
     player_transforms_server: &mut HashMap<u64, Vec2>,
     ghost_velocity: &mut Mut<Velocity>,
     transform: &mut Mut<Transform>,
-    mut ghost_player: &mut &GhostPlayer,
+    ghost_player: &mut &GhostPlayer,
 ) {
-    println!("Updating player with id: {}", ghost_player.id);
     let server_velocity = player_velocities_server.get(&ghost_player.id).unwrap();
     let server_transform = player_transforms_server.get(&ghost_player.id).unwrap();
     ghost_velocity.linvel.x = server_velocity.x;
@@ -108,7 +106,7 @@ fn move_player(
     player_id_list.retain(|&x| x != ghost_player.id);
 }
 
-fn despawn_player(commands: &mut Commands, entity: Entity) {
+pub fn despawn_player(commands: &mut Commands, entity: Entity) {
     commands.entity(entity).despawn();
     commands.entity(entity).remove::<GhostPlayer>();
 }
@@ -140,7 +138,7 @@ fn spawn_player(commands: &mut Commands, asset_server: &Res<AssetServer>, id: u6
             ..Default::default()
         },
         ghost_collider_bundle: GhostColliderBundle {
-            collider: Collider::cuboid(8.0, 8.0),
+            collider: Collider::cuboid(6.5, 8.0),
             rigid_body: RigidBody::Dynamic,
             friction: Friction::new(0.0),
             rotation_constraints: LockedAxes::ROTATION_LOCKED,

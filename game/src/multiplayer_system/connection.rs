@@ -1,11 +1,12 @@
+use bevy::prelude::{Commands, Entity, Query, With};
 use bevy::{
     app::{App, Startup, Update},
     ecs::{
         event::{EventReader, EventWriter},
         schedule::IntoSystemConfigs,
         system::{Res, ResMut},
-    }, time::{Timer, TimerMode},
-    
+    },
+    time::{Timer, TimerMode},
 };
 use bevy_quinnet::client::{
     certificate::CertificateVerificationMode,
@@ -13,12 +14,13 @@ use bevy_quinnet::client::{
     Client, QuinnetClientPlugin,
 };
 
+
 use crate::multiplayer_system::ghost_player;
 use crate::multiplayer_system::ghost_player::GhostPlayersMovedEvent;
 use crate::multiplayer_system::highscore;
-use crate::multiplayer_system::player_movement;
 use crate::multiplayer_system::highscore::HighscoreInfoEvent;
-use shared::{Highscore, PlayerMessage, PlayerMovement, ServerMessage};
+use crate::multiplayer_system::player_movement;
+use shared::{PlayerMessage, PlayerMovement, ServerMessage};
 
 /// The ip adress of the server. Use `127.0.0.1` when running the server locally, otherwise replace it
 /// with the ip of your hosted server.
@@ -40,10 +42,6 @@ pub fn setup_client(app: &mut App) {
     app.insert_resource(player_movement::UpdatePlayerMovementTimer(
         Timer::from_seconds(0.02, TimerMode::Repeating),
     ));
-    app.insert_resource(highscore::HighscoreResource(Highscore {
-        player_name: "".to_string(),
-        time_in_seconds: 0, // 0 means -> No highscore set yet.
-    }));
 
     app.add_systems(Startup, start_connection);
     app.add_systems(
@@ -54,7 +52,7 @@ pub fn setup_client(app: &mut App) {
             handle_server_messages.run_if(is_player_connected),
             player_movement::update_player_movement.run_if(is_player_connected),
             ghost_player::moved_players_updated,
-            highscore::highscore_updated,
+            highscore::on_player_finish_level.run_if(is_player_connected),
         ),
     );
 }
@@ -108,10 +106,16 @@ fn is_player_connected(client: Res<Client>) -> bool {
 }
 
 /// Called when the player loses the connection to the server.
-fn handle_connection_lost_event(mut connection_lost_event: EventReader<ConnectionLostEvent>) {
+fn handle_connection_lost_event(
+    mut connection_lost_event: EventReader<ConnectionLostEvent>,
+    mut query: Query<Entity, With<crate::asset_system::players::GhostPlayer>>,
+    mut commands: Commands,
+) {
     if !connection_lost_event.is_empty() {
         connection_lost_event.clear();
-        // TODO: Despawn ghost players using this event
+        for entity in query.iter_mut() {
+            ghost_player::despawn_player(&mut commands, entity);
+        }
     }
 }
 
