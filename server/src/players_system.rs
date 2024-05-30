@@ -1,12 +1,13 @@
 use bevy::prelude::*;
 use bevy_quinnet::server::Server;
+
 use shared::{PlayerMovedUpdate, PlayerMovement, ServerMessage};
 
 use crate::highscore_system::HighscoreResource;
 
 //
 // ------> Components <------ //
-//      
+//
 
 /// Represents a client currently playing the game. This component will be spawned
 /// when the client calls the `PlayerMessage::JoinGame` function.
@@ -77,7 +78,7 @@ pub fn on_player_joined(
     mut events: EventReader<PlayerJoinedEvent>,
     mut commands: Commands,
     server: Res<Server>,
-    highscore: Res<HighscoreResource>
+    highscore: Res<HighscoreResource>,
 ) {
     for ev in events.read() {
         println!("Player {} joined the game.", ev.client_id);
@@ -211,33 +212,86 @@ pub fn remove_inactive_players(
 //
 // ------> Tests <------ //
 //
+
+// To be able to test specific player_system functions a set of test utilities, like creating a server,
+// connecting a client, etc., is needed.
+
+fn _tests_util_create_server_app() -> App {
+    use bevy_quinnet::server::QuinnetServerPlugin;
+    let mut server_app = App::new();
+    server_app.add_plugins(QuinnetServerPlugin::default());
+    server_app
+}
+
+fn _tests_util_create_client_app() -> App {
+    use bevy_quinnet::client::QuinnetClientPlugin;
+    let mut client_app = App::new();
+    client_app.add_plugins(QuinnetClientPlugin::default());
+    client_app
+}
+
+fn _tests_util_start_server(server_app: &mut App) {
+    use bevy_quinnet::server::{certificate::CertificateRetrievalMode, ServerConfiguration};
+
+    let mut server = server_app.world.get_resource_mut::<Server>().unwrap();
+    let _ = server.start_endpoint(
+        ServerConfiguration::from_string("127.0.0.1:8123").unwrap(),
+        CertificateRetrievalMode::GenerateSelfSigned {
+            server_hostname: "Testserver".to_string(),
+        },
+    );
+
+    loop {
+        if server.is_listening() {
+            break;
+        }
+    }
+}
+
+fn _tests_util_connect_client_to_server(server_app: &mut App, client_app: &mut App) {
+    use bevy_quinnet::client::{
+        certificate::CertificateVerificationMode, connection::ConnectionConfiguration, Client,
+    };
+
+    {
+        let mut client = client_app.world.get_resource_mut::<Client>().unwrap();
+        let _ = client.open_connection(
+            ConnectionConfiguration::from_strings("127.0.0.1:8123", "0.0.0.0:0").unwrap(),
+            CertificateVerificationMode::SkipVerification,
+        );
+    }
+
+    loop {
+        server_app.update();
+        client_app.update();
+        if client_app
+            .world
+            .get_resource_mut::<Client>()
+            .unwrap()
+            .connection()
+            .is_connected()
+        {
+            break;
+        }
+    }
+}
+
+fn _tests_util_add_highscore_resource(server_app: &mut App) {
+    use shared::Highscore;
+    server_app.insert_resource(HighscoreResource(Highscore {
+        time_in_seconds: 0, // 0 means -> No highscore set yet.
+    }));
+}
+
 #[test]
 fn test_player_join() {
-    use bevy_quinnet::server::QuinnetServerPlugin;
-    use bevy_quinnet::client::{
-        certificate::CertificateVerificationMode,
-        connection::{ConnectionConfiguration, ConnectionEvent, ConnectionLostEvent},
-        Client, QuinnetClientPlugin,
-    };
-    use crate::start_listening;
+    let mut server_app = _tests_util_create_server_app();
+    let mut client_app = _tests_util_create_client_app();
+    _tests_util_add_highscore_resource(&mut server_app);
+    _tests_util_start_server(&mut server_app);
+    _tests_util_connect_client_to_server(&mut server_app, &mut client_app);
 
-    // Init the app and server
-    let mut app = App::new();
-    app.add_plugins(QuinnetServerPlugin::default());
-    app.add_plugins(QuinnetClientPlugin::default());
-    app.add_systems(Update, start_listening);
-    app.update();
-
-
-    client.open_connection(
-        ConnectionConfiguration::from_strings("127.0.0.1:8123", "0.0.0.0:0"),
-        CertificateVerificationMode::SkipVerification,
-    );    
-
-    // Add the systems
-    app.add_systems(Update, on_player_joined);
-    app.update();
-
+    // Create event
     let player_joined_event = PlayerJoinedEvent {
         client_id: 1,
         movement: PlayerMovement {
@@ -247,12 +301,20 @@ fn test_player_join() {
             translation_y: 0.0,
         },
     };
+    server_app.add_event::<PlayerJoinedEvent>();
+    server_app.world.send_event(player_joined_event);
 
-    app.world.insert_resource(player_joined_event);
+    // Add player joined system
+    server_app.add_systems(Update, on_player_joined);
+    server_app.update();
 
-    app.update();
+    // Test if player exists as entity
+    let mut query = server_app
+        .world
+        .query::<((Entity, &Player), With<Player>)>();
+    assert!(query.get_single(&server_app.world).is_ok());
+}
 
-    let clients = endpoint.clients();
-    assert_eq!(clients.len(), 1);
-    assert_eq!(clients[0], 1);
+fn test_player_left() {
+    
 }
