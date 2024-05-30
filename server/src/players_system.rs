@@ -217,9 +217,10 @@ pub fn remove_inactive_players(
 // connecting a client, etc., is needed.
 
 fn _tests_util_create_server_app() -> App {
+    use bevy::time::TimePlugin;
     use bevy_quinnet::server::QuinnetServerPlugin;
     let mut server_app = App::new();
-    server_app.add_plugins(QuinnetServerPlugin::default());
+    server_app.add_plugins((QuinnetServerPlugin::default(), TimePlugin::default()));
     server_app
 }
 
@@ -235,7 +236,7 @@ fn _tests_util_start_server(server_app: &mut App) {
 
     let mut server = server_app.world.get_resource_mut::<Server>().unwrap();
     let _ = server.start_endpoint(
-        ServerConfiguration::from_string("127.0.0.1:8123").unwrap(),
+        ServerConfiguration::from_string("127.0.0.1:8456").unwrap(),
         CertificateRetrievalMode::GenerateSelfSigned {
             server_hostname: "Testserver".to_string(),
         },
@@ -256,7 +257,7 @@ fn _tests_util_connect_client_to_server(server_app: &mut App, client_app: &mut A
     {
         let mut client = client_app.world.get_resource_mut::<Client>().unwrap();
         let _ = client.open_connection(
-            ConnectionConfiguration::from_strings("127.0.0.1:8123", "0.0.0.0:0").unwrap(),
+            ConnectionConfiguration::from_strings("127.0.0.1:8456", "0.0.0.0:0").unwrap(),
             CertificateVerificationMode::SkipVerification,
         );
     }
@@ -312,9 +313,42 @@ fn test_player_join() {
     let mut query = server_app
         .world
         .query::<((Entity, &Player), With<Player>)>();
-    assert!(query.get_single(&server_app.world).is_ok());
+    assert_eq!(query.iter(&server_app.world).len(), 1);
 }
 
-fn test_player_left() {
-    
+#[test]
+fn test_remove_inactive_player() {
+    let mut server_app = _tests_util_create_server_app();
+    let mut client_app = _tests_util_create_client_app();
+    _tests_util_add_highscore_resource(&mut server_app);
+    _tests_util_start_server(&mut server_app);
+    _tests_util_connect_client_to_server(&mut server_app, &mut client_app);
+
+    // Create event
+    let player_joined_event = PlayerJoinedEvent {
+        client_id: 1,
+        movement: PlayerMovement {
+            velocity_x: 0.0,
+            velocity_y: 0.0,
+            translation_x: 0.0,
+            translation_y: 0.0,
+        },
+    };
+    server_app.add_event::<PlayerJoinedEvent>();
+    server_app.world.send_event(player_joined_event);
+
+    // Add systems
+    server_app.add_systems(Update, on_player_joined);
+    server_app.add_systems(Update, remove_inactive_players);
+    server_app.run();
+
+    // Wait until player should be removed
+    use std::{thread::sleep, time::Duration};
+    sleep(Duration::new(11, 0));
+
+    // Test if player was removed as entity
+    let mut query = server_app
+        .world
+        .query::<((Entity, &Player), With<Player>)>();
+    assert_eq!(query.iter(&server_app.world).len(), 0);
 }
