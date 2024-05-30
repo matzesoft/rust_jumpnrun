@@ -122,3 +122,20 @@ fn handle_player_messages(
         }
     }
 }
+
+#[test]
+fn test_server_startup() {
+    let mut app = App::new();
+    app.add_plugins(QuinnetServerPlugin::default());
+    app.add_systems(Update, start_listening);
+    app.update();
+
+    let server_option = app.world.get_resource::<Server>();
+
+    match server_option {
+        Some(server) => {
+            assert!(server.is_listening());
+        }
+        None => assert!(false),
+    }
+}
