@@ -2,8 +2,8 @@
 use super::player;
 use super::sprite;*/
 
-use crate::asset_system::walls::GroundDetection;
 use crate::asset_system::players::Player;
+use crate::asset_system::walls::GroundDetection;
 use crate::input_system::input_handler::InputHandler;
 use bevy::input::gamepad::*;
 use bevy::prelude::*;
@@ -14,9 +14,30 @@ pub struct MyGamepad(pub Gamepad);
 mod button_definitions {
     use bevy::prelude::GamepadButtonType;
 
-    //defines the different buttons used as well as their usage
+    /// Defines the jump button used in the gamepad input handling
+    ///
+    /// This module contains a constant that represents the jump button on a gamepad.
+    /// The constant is of type `GamepadButtonType`, which is an enum provided by the `bevy` crate.
+    ///
+    /// The jump button is set to `GamepadButtonType::South`, which typically corresponds to the 'A' button on an Xbox controller or the 'X' button on a PlayStation controller.
+    ///
+
     pub const JUMP_BUTTON: GamepadButtonType = GamepadButtonType::South;
 }
+/// Handles the connection and disconnection of gamepads
+///
+/// This function is responsible for processing gamepad connection events and updating the game state accordingly.
+/// It reads the gamepad events and if a connection event is detected, it checks whether a gamepad is already connected.
+/// If no gamepad is connected, it sets the newly connected gamepad as the active gamepad.
+/// If a gamepad is disconnected, it checks whether it was the active gamepad and if so, it removes it.
+///
+/// # Arguments
+///
+/// * `commands` - A mutable reference to the `Commands` struct, which is used to insert or remove resources in the ECS.
+/// * `my_gamepad` - An optional resource that represents the currently connected gamepad. If no gamepad is connected, this will be None.
+/// * `gamepad_evr` - The event reader for the gamepad. This is used to read the gamepad events that occurred since the last frame.
+///
+
 pub fn gamepad_connections(
     mut commands: Commands,
     my_gamepad: Option<Res<MyGamepad>>,
@@ -52,11 +73,18 @@ pub fn gamepad_connections(
     }
 }
 
-/// Handles the gamepad input
+/// Handles the gamepad input for the player
+///
+/// This function is responsible for processing the input from the gamepad and updating the player's state accordingly.
+/// It reads the gamepad events and applies the corresponding actions to the player's input handler.
+/// For example, if the jump button is pressed, it sets the jumping state of the player to true.
+///
 /// # Arguments
-/// * `my_gamepad` - The gamepad that is connected
-/// * `gamepad_evr` - The event reader for the gamepad
-/// * `player` - Query that fetches the input handler of the player, gets provided when called as a system
+///
+/// * `my_gamepad` - An optional resource that represents the connected gamepad. If no gamepad is connected, this will be None.
+/// * `gamepad_evr` - The event reader for the gamepad. This is used to read the gamepad events that occurred since the last frame.
+/// * `player` - A query that fetches the input handler and ground detection of the player. The input handler is used to update the player's state based on the gamepad input, and the ground detection is used to check if the player is on the ground before allowing them to jump.
+
 pub fn gamepad_input(
     my_gamepad: Option<Res<MyGamepad>>,
     mut gamepad_evr: EventReader<GamepadEvent>,

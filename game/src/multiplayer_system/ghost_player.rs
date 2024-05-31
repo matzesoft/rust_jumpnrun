@@ -105,12 +105,32 @@ fn move_player(
     //remove the player from the list
     player_id_list.retain(|&x| x != ghost_player.id);
 }
-
+/// Despawns a ghost player entity
+///
+/// This function is responsible for despawning a ghost player entity from the ECS.
+/// It removes the `GhostPlayer` component from the entity and then despawns the entity itself.
+///
+/// # Arguments
+///
+/// * `commands` - A mutable reference to the `Commands` struct, which is used to despawn entities and remove components in the ECS.
+/// * `entity` - The `Entity` struct representing the ghost player to be despawned.
+///
 pub fn despawn_player(commands: &mut Commands, entity: Entity) {
     commands.entity(entity).despawn();
     commands.entity(entity).remove::<GhostPlayer>();
 }
-
+/// Spawns a new ghost player entity
+///
+/// This function is responsible for spawning a new ghost player entity in the ECS.
+/// It loads the sprite for the player based on their id, creates a texture atlas from the sprite,
+/// and then spawns a new entity with the `GhostPlayerBundle`.
+///
+/// # Arguments
+///
+/// * `commands` - A mutable reference to the `Commands` struct, which is used to spawn entities and insert components in the ECS.
+/// * `asset_server` - A reference to the `AssetServer`, which is used to load assets.
+/// * `id` - The id of the player to spawn.
+///
 fn spawn_player(commands: &mut Commands, asset_server: &Res<AssetServer>, id: u64) {
     println!("Spawning player with id: {}", id);
 
@@ -146,6 +166,19 @@ fn spawn_player(commands: &mut Commands, asset_server: &Res<AssetServer>, id: u6
         },
     });
 }
+/// Returns the filename of the sprite for a given player id
+///
+/// This function is responsible for generating the filename of the sprite for a given player id.
+/// It uses the player id to select one of the 19 available player sprites.
+///
+/// # Arguments
+///
+/// * `player_id` - The id of the player for which to generate the sprite filename.
+///
+/// # Returns
+///
+/// This function returns a `String` that represents the filename of the sprite for the given player id.
+///
 fn get_sprite_filename(player_id: u64) -> String {
-    format!("player_sprites/Charakter{}.png", (player_id % 19) + 1) //there are 19 different player sprites available
+    format!("player_sprites/Charakter{}.png", (player_id % 19) + 1) //there are 19 different player sprites available, the 20th player gets the same sprite as the first player
 }
