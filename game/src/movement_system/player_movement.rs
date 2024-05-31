@@ -10,7 +10,7 @@ const PLAYER_SPEED: f32 = 100.0;
 ///
 /// This function moves the player based on the input_handler.
 /// # Arguments
-/// * `query` - Query that fetches the velocity and input handler of the player, gets provided when called as a system
+/// * `query` - Query that fetches the velocity, input handler and ground detection of the player, gets provided when called as a system
 
 pub fn player_movement(
     mut query: Query<(&mut Velocity, &mut InputHandler, &GroundDetection), With<Player>>,
