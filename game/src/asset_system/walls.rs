@@ -5,14 +5,34 @@ use bevy_rapier2d::dynamics::RigidBody;
 use bevy_rapier2d::geometry::{ActiveEvents, Collider, Friction, Sensor};
 use bevy_rapier2d::pipeline::CollisionEvent;
 
+/// Component for wall entity
 #[derive(Default, Component)]
 pub struct Wall;
 
+/// Bundle for wall entity
+///
+/// # Fields
+///
+/// * `wall` - The wall entity.
 #[derive(Default, Bundle, LdtkIntCell)]
 pub struct WallBundle {
     wall: Wall,
 }
 
+/// Spawns wall collisions
+///
+/// spawns an entity with a collider for each wall tile in the level
+/// combines adjacent wall tiles into larger colliders for performance
+/// as seen in the bevy ecs ldtk example
+///
+/// # Parameters
+///
+/// * `commands` - The commands to spawn the wall collisions.
+/// * `wall_query` - The query for the wall entity.
+/// * `parent_query` - The query for the parent entity.
+/// * `level_query` - The query for the level entity.
+/// * `ldtk_projects` - The query for the ldtk project.
+/// * `ldtk_project_assets` - The ldtk project assets.
 pub fn spawn_wall_collision(
     mut commands: Commands,
     wall_query: Query<(&GridCoords, &Parent), Added<Wall>>,
@@ -167,17 +187,36 @@ pub fn spawn_wall_collision(
     }
 }
 
+/// Component for ground detection
+///
+/// # Fields
+///
+/// * `on_ground` - Whether the entity is on the ground.
 #[derive(Clone, Default, Component)]
 pub struct GroundDetection {
     pub on_ground: bool,
 }
 
+/// Component for ground sensor
+///
+/// # Fields
+///
+/// * `ground_detection_entity` - The entity that has the ground detection component.
+/// * `intersecting_ground_entities` - The entities that are intersecting with the ground sensor.
 #[derive(Component)]
 pub struct GroundSensor {
     pub ground_detection_entity: Entity,
     pub intersecting_ground_entities: HashSet<Entity>,
 }
 
+/// Spawns ground sensors
+///
+/// spawns a sensor entity for each entity with a ground detection component
+///
+/// # Parameters
+///
+/// * `commands` - The commands to spawn the ground sensors.
+/// * `detect_ground_for` - The query for the entities with a ground detection component.
 pub fn spawn_ground_sensor(
     mut commands: Commands,
     detect_ground_for: Query<(Entity, &Collider), Added<GroundDetection>>,
@@ -210,6 +249,17 @@ pub fn spawn_ground_sensor(
     }
 }
 
+
+/// Detects ground
+///
+/// detects when the ground sensor is intersecting with the ground
+///
+/// # Parameters
+///
+/// * `ground_sensors` - The query for the ground sensors.
+/// * `collisions` - The event reader for the collision events.
+/// * `collidables` - The query for the collidable entities.
+/// * `walls` - The query for the wall entities.
 pub fn ground_detection(
     mut ground_sensors: Query<&mut GroundSensor>,
     mut collisions: EventReader<CollisionEvent>,
@@ -244,6 +294,9 @@ pub fn ground_detection(
     }
 }
 
+/// Updates on ground
+///
+/// when the ground sensor is intersecting with the ground, updates the ground detection component
 pub fn update_on_ground(
     mut ground_detectors: Query<&mut GroundDetection>,
     ground_sensors: Query<&GroundSensor, Changed<GroundSensor>>,

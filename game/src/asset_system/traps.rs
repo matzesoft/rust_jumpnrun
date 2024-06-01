@@ -6,14 +6,34 @@ use bevy_rapier2d::geometry::{ActiveEvents, Collider, Friction, Sensor};
 use bevy_rapier2d::pipeline::CollisionEvent;
 use crate::score_system::time::TimeText;
 
+/// Component for traps
 #[derive(Default, Component)]
 pub struct Trap;
 
+/// Bundle for traps
+///
+/// # Fields
+///
+/// * `trap` - The trap entity.
 #[derive(Default, Bundle, LdtkIntCell)]
 pub struct TrapBundle {
     trap: Trap,
 }
 
+/// Spawns trap collisions
+///
+/// spawns a collider for every trap tile in the level.
+/// combines adjacent trap tiles into larger rectangles to reduce the number of colliders and improve performance.
+/// seen in bevy ecs ldtk examples.
+///
+/// # Arguments
+///
+/// * `commands` - A mutable reference to the `Commands` struct.
+/// * `trap_query` - A query that gets the grid coordinates and parent of the trap entity.
+/// * `parent_query` - A query that gets the parent of the trap entity.
+/// * `level_query` - A query that gets the entity and level iid.
+/// * `ldtk_projects` - A query that gets the handle of the ldtk project.
+/// * `ldtk_project_assets` - A resource that loads the ldtk project assets.
 pub fn spawn_trap_collision(
     mut commands: Commands,
     trap_query: Query<(&GridCoords, &Parent), Added<Trap>>,
@@ -58,6 +78,7 @@ pub fn spawn_trap_collision(
                 .insert(grid_coords);
         }
     });
+
 
     if !trap_query.is_empty() {
         level_query.iter().for_each(|(level_entity, level_iid)| {
@@ -169,17 +190,37 @@ pub fn spawn_trap_collision(
     }
 }
 
+/// Component for trap detection
+///
+/// # Fields
+///
+/// * `on_trap` - A boolean that is true if the player is on a trap.
 #[derive(Clone, Default, Component)]
 pub struct TrapDetection {
     pub on_trap: bool,
 }
 
+/// Component for trap sensor
+///
+/// # Fields
+///
+/// * `trap_detection_entity` - The entity that detects traps.
+/// * `intersecting_trap_entities` - A hash set of entities that intersect with the trap sensor.
 #[derive(Component)]
 pub struct TrapSensor {
     pub trap_detection_entity: Entity,
     pub intersecting_trap_entities: HashSet<Entity>,
 }
 
+
+/// Spawns trap sensors
+///
+/// this spawns a sensor for every entity that has a trap detection component.
+///
+/// # Arguments
+///
+/// * `commands` - A mutable reference to the `Commands` struct.
+/// * `detect_trap_for` - A query that gets the entity and collider of the trap detection component.
 pub fn spawn_trap_sensor(
     mut commands: Commands,
     detect_trap_for: Query<(Entity, &Collider), Added<TrapDetection>>,
@@ -212,6 +253,16 @@ pub fn spawn_trap_sensor(
     }
 }
 
+/// Detects traps
+///
+/// this function detects if the player is on a trap.
+///
+/// # Arguments
+///
+/// * `trap_sensors` - A query that gets the trap sensor.
+/// * `collisions` - An event reader that reads collision events.
+/// * `collidables` - A query that gets the entity and collider of the collidable entities.
+/// * `traps` - A query that gets the entity of the traps.
 pub fn trap_detection(
     mut trap_sensors: Query<&mut TrapSensor>,
     mut collisions: EventReader<CollisionEvent>,
@@ -246,6 +297,16 @@ pub fn trap_detection(
     }
 }
 
+/// Updates the trap detection
+///
+/// this function teleports the player to the beginning of the level and resets the timer if the player hits on a trap.
+///
+/// # Arguments
+///
+/// * `trap_detectors` - A query that gets the trap detection component.
+/// * `trap_sensors` - A query that gets the trap sensor component.
+/// * `transforms` - A query that gets the transform component.
+/// * `time_text` - A query that gets the time text component.
 pub fn update_on_trap(
     mut trap_detectors: Query<&mut TrapDetection>,
     trap_sensors: Query<&TrapSensor, Changed<TrapSensor>>,

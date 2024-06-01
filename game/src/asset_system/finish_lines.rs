@@ -6,14 +6,34 @@ use bevy_rapier2d::geometry::{ActiveEvents, Collider, Friction, Sensor};
 use bevy_rapier2d::pipeline::CollisionEvent;
 use crate::score_system::time::TimeText;
 
+/// FinsihLine component
+///
+///  # Fields
 #[derive(Default, Component)]
 pub struct FinishLine;
 
+/// Bundle for FinishLine
+///
+/// # Fields
 #[derive(Default, Bundle, LdtkIntCell)]
 pub struct FinishLineBundle {
     finishline: FinishLine,
 }
 
+/// Spawns finishline collisions
+///
+/// spawns the finishline collisions for the level.
+/// combines horizontally next to each other in to plates for performance reasons.
+/// this combination thechnique id from the bevy ecs ldtk example.
+///
+/// # Arguments
+///
+/// * `commands` - A mutable reference to the `Commands` struct.
+/// * `finishline_query` - A query that fetches the grid coordinates and parent of the finishline entity.
+/// * `parent_query` - A query that fetches the parent of the finishline entity.
+/// * `level_query` - A query that fetches the entity and level iid.
+/// * `ldtk_projects` - A query that fetches the handle of the ldtk project.
+/// * `ldtk_project_assets` - A resource that stores the assets of the ldtk project.
 pub fn spawn_finishline_collision(
     mut commands: Commands,
     finishline_query: Query<(&GridCoords, &Parent), Added<FinishLine>>,
@@ -168,17 +188,32 @@ pub fn spawn_finishline_collision(
     }
 }
 
+/// FinishLineDetection component
+///
+///  # Fields
 #[derive(Clone, Default, Component)]
 pub struct FinishLineDetection {
     pub on_finishline: bool,
 }
 
+
+/// Bundle for FinishLineDetection
+///
+/// # Fields
 #[derive(Component)]
 pub struct FinishLineSensor {
     pub finishline_detection_entity: Entity,
     pub intersecting_finishline_entities: HashSet<Entity>,
 }
 
+/// Spawns finishline sensors
+///
+/// this spawns the finsihline sensors on any entity that has a finishline detection component.
+///
+/// # Arguments
+///
+/// * `commands` - A mutable reference to the `Commands` struct.
+/// * `detect_finishline_for` - A query that fetches the entity and collider of the finishline detection.
 pub fn spawn_finishline_sensor(
     mut commands: Commands,
     detect_finishline_for: Query<(Entity, &Collider), Added<FinishLineDetection>>,
@@ -211,6 +246,16 @@ pub fn spawn_finishline_sensor(
     }
 }
 
+/// Detects finishline collisions
+///
+/// this detects the finishline collisions for the finishline sensors.
+///
+/// # Arguments
+///
+/// * `finishline_sensors` - A query that fetches the finishline sensors.
+/// * `collisions` - An event reader that reads the collision events.
+/// * `collidables` - A query that fetches the entity and collider of the collidable entities.
+/// * `finishlines` - A query that fetches the entity of the finishline entities.
 pub fn finishline_detection(
     mut finishline_sensors: Query<&mut FinishLineSensor>,
     mut collisions: EventReader<CollisionEvent>,
@@ -245,11 +290,30 @@ pub fn finishline_detection(
     }
 }
 
+/// FinishLineEvent
+///
+/// this stores the time elapsed for the finsihline event.
+/// needed for updating the higscore.
+///
+/// # Fields
 #[derive(Event)]
 pub struct FinishLineEvent{
     pub elapsed_time: u64,
 }
 
+/// Update event on finishline
+///
+/// this sends an event when the player reaches the finishline, to update the highscore.
+/// sets the elapsed time to 0 and resets the time text.
+/// teleports the player to the start of the level.
+///
+/// # Arguments
+///
+/// * `finishline_detectors` - A query that fetches the finishline detectors.
+/// * `finishline_sensors` - A query that fetches the finishline sensors.
+/// * `finishline_events` - An event writer that writes the finishline events.
+/// * `transforms` - A query that fetches the transform of the entities.
+/// * `time_text` - A query that fetches the time text.
 pub fn update_on_finishline(
     mut finishline_detectors: Query<&mut FinishLineDetection>,
     finishline_sensors: Query<&FinishLineSensor, Changed<FinishLineSensor>>,
