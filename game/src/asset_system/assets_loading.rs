@@ -3,7 +3,7 @@ use bevy_ecs_ldtk::prelude::*;
 
 /// Sets up the game by spawning the camera and the ldtk world
 ///
-/// This function setsup the camera and the ldtk file in wahich the world is saved.
+/// This function setsup the camera and the ldtk file in which the world is saved in.
 /// # Arguments
 /// * `commands` - A mutable reference to the commands
 /// * `asset_server` - A resource that loads the assets
