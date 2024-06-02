@@ -16,7 +16,7 @@ pub fn camera_movement(
     mut query: Query<&mut Transform, With<Player>>,
     mut camera: Query<(&mut Transform, &Camera2d), Without<Player>>,
 ) {
-    const CAMERA_OFFSET_X: f32 = 1280.0 / 4.0;
+
     for transform in &mut query {
         //implements walking
         for (mut campos, _cam2d) in &mut camera.iter_mut() {
