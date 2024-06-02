@@ -43,20 +43,20 @@ pub fn moved_players_updated(
             &mut player_velocities_server,
             &mut player_transforms_server,
         );
-        for (mut ghost_velocity, _ghost_transform, mut transform, mut ghostPlayer, entity) in
+        for (mut ghost_velocity, _ghost_transform, mut transform, mut ghost_player, entity) in
             &mut query
         {
-            if player_id_list.contains(&ghostPlayer.id) {
+            if player_id_list.contains(&ghost_player.id) {
                 move_player(
                     &mut player_id_list,
                     &mut player_velocities_server,
                     &mut player_transforms_server,
                     &mut ghost_velocity,
                     &mut transform,
-                    &mut ghostPlayer,
+                    &mut ghost_player,
                 );
             } else {
-                println!("Despawning player with id: {}", ghostPlayer.id);
+                println!("Despawning player with id: {}", ghost_player.id);
                 //remove the player
                 despawn_player(&mut commands, entity);
             }
